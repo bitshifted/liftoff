@@ -18,6 +18,7 @@ func TestProcessTerraformFiles(t *testing.T) {
 		BaseDir:   "test_files",
 		OutputDir: tmpDir,
 	}
+	t.Setenv("HCLOUD_TOKEN", "foo")
 	config, err := config.LoadConfig("test_files/sample-config.yaml")
 	assert.NoError(t, err)
 	err = processor.ProcessTerraformTemplate(config)

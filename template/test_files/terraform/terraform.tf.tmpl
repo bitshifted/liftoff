@@ -18,5 +18,8 @@ terraform {
 
 [[ with .Terraform.Providers.Hcloud ]]
 provider "hcloud" {
+[[ with .Token -]]
+  token = "[[ . ]]"
+[[ end -]]
 }
 [[ end ]]

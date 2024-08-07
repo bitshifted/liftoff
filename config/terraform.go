@@ -39,9 +39,9 @@ func (t *Terraform) postLoad(config *Configuration) error {
 	}
 	if t.Providers == nil {
 		return errors.New("at least one Terraform provider is required")
+	} else {
+		return t.Providers.postLoad()
 	}
-	// set default values if needed
-	return nil
 
 }
 
@@ -96,5 +96,15 @@ func calculateLocalBackendPath(config *Configuration) (string, error) {
 }
 
 type TerraformProvider struct {
-	Hcloud ProviderHcloud `yaml:"hcloud,omitempty"`
+	Hcloud *ProviderHcloud `yaml:"hcloud,omitempty"`
+}
+
+func (tp *TerraformProvider) postLoad() error {
+	if tp.Hcloud != nil {
+		err := tp.Hcloud.postLoad()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
