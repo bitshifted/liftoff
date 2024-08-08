@@ -2,6 +2,8 @@ package common
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"regexp"
 	"strings"
 
@@ -58,4 +60,33 @@ func ExtractEnvVarName(input string) (string, error) {
 		return input[1:], nil
 	}
 	return "", errors.New("failed to extract variable name")
+}
+
+func ProcessStringValue(input string) (string, error) {
+	valueType := ValueTypeFromString(input)
+	switch valueType {
+	case EnvVariableString:
+		// extract variable name and check if it is set
+		varName, err := ExtractEnvVarName(input)
+		if err != nil {
+			return "", err
+		}
+		if !IsEnvVariableSet(varName) {
+			err := fmt.Errorf("referenced environment variable %s is not set", varName)
+			log.Logger.Error().Err(err).Msg("Environment variable is not set")
+			return "", err
+		} else {
+			return "", nil
+		}
+	case FileContentString:
+		// strip prefix
+		path := input[len(contentPrefix):]
+		// read file content into string
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return "", err
+		}
+		return string(data), nil
+	}
+	return input, nil
 }

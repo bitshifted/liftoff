@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bitshifted/easycloud/common"
@@ -15,6 +16,9 @@ type ProviderHcloud struct {
 }
 
 func (hc *ProviderHcloud) postLoad() error {
+	if hc.Token == "" {
+		return errors.New("token is required for hcloud provider")
+	}
 	valueType := common.ValueTypeFromString(hc.Token)
 	switch valueType {
 	case common.EnvVariableString:

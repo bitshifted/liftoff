@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/bitshifted/easycloud/log"
@@ -59,4 +61,20 @@ func (ts *UtilsTestSuite) TestShouldReturnCorrectEnvVarName() {
 	ts.Equal("BAR", name)
 	_, err = ExtractEnvVarName("${INVALID")
 	ts.Error(err)
+}
+
+func (ts *UtilsTestSuite) TestShouldReturnFileContentRelPath() {
+	content, err := ProcessStringValue("filecontent:test_files/sample.txt")
+	ts.NoError(err)
+	ts.Equal("sample text", content)
+}
+
+func (ts *UtilsTestSuite) TestShouldReturnFileContentAbsPath() {
+	file, err := os.CreateTemp("", "content")
+	log.Logger.Debug().Msgf("temp file path: %s", file.Name())
+	ts.NoError(err)
+	file.WriteString("sample text")
+	content, err := ProcessStringValue(fmt.Sprintf("filecontent:%s", file.Name()))
+	ts.NoError(err)
+	ts.Equal("sample text", content)
 }
