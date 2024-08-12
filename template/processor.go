@@ -7,15 +7,13 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/bitshifted/easycloud/common"
 	"github.com/bitshifted/easycloud/config"
 	"github.com/bitshifted/easycloud/log"
 )
 
 const (
-	defaultOutputDir    = "target"
-	defaultTerraformDir = "terraform"
-	defaultAnsibleDir   = "ansible"
-	templateSuffix      = ".tmpl"
+	templateSuffix = ".tmpl"
 )
 
 type TemplateProcessor struct {
@@ -27,19 +25,19 @@ type TemplateProcessor struct {
 
 func (tp *TemplateProcessor) ProcessTerraformTemplate(config *config.Configuration) error {
 	if tp.TerraformDir == "" {
-		tp.TerraformDir = defaultTerraformDir
+		tp.TerraformDir = common.DefaultTerraformDir
 	}
 	templateDir := path.Join(tp.BaseDir, tp.TerraformDir)
 	log.Logger.Debug().Msgf("template directory: %s", templateDir)
 	var outputDir string
 	if tp.OutputDir == "" {
-		tp.OutputDir = defaultOutputDir
-		outputDir = path.Join(tp.BaseDir, tp.OutputDir, defaultTerraformDir)
+		tp.OutputDir = common.DefaultOutputDir
+		outputDir = path.Join(tp.BaseDir, tp.OutputDir, common.DefaultTerraformDir)
 	} else {
 		if filepath.IsAbs(tp.OutputDir) {
-			outputDir = path.Join(tp.OutputDir, defaultTerraformDir)
+			outputDir = path.Join(tp.OutputDir, common.DefaultTerraformDir)
 		} else {
-			outputDir = path.Join(tp.BaseDir, tp.OutputDir, defaultTerraformDir)
+			outputDir = path.Join(tp.BaseDir, tp.OutputDir, common.DefaultTerraformDir)
 		}
 	}
 	log.Logger.Info().Msgf("Output directory: %s", outputDir)

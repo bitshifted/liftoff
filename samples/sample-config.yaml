@@ -1,0 +1,8 @@
+---
+template-dir: /home/vlada/work/bitshift/altclouds/hetzner/nat-gateway
+terraform:
+  backend:
+    type: local
+  providers:
+    hcloud:
+      token: "${HCLOUD_TOKEN}"

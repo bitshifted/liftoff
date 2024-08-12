@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/bitshifted/easycloud/common"
 	"github.com/bitshifted/easycloud/config"
 	"github.com/bitshifted/easycloud/log"
 	"github.com/stretchr/testify/assert"
@@ -23,6 +24,6 @@ func TestProcessTerraformFiles(t *testing.T) {
 	assert.NoError(t, err)
 	err = processor.ProcessTerraformTemplate(config)
 	assert.NoError(t, err)
-	_, err = os.Stat(path.Join(tmpDir, defaultTerraformDir, "terraform.tf"))
+	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "terraform.tf"))
 	assert.NoError(t, err)
 }
