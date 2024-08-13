@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultTemplateRepo = "https://github.com/bitshifted/easycloud-templates"
+	defaultTemplateRepo = "https://github.com/bitshifted/autoconfig-templates"
 )
 
 type Configuration struct {

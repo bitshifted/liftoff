@@ -127,3 +127,7 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 	}
 	return outputs, nil
 }
+
+func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
+	return nil
+}

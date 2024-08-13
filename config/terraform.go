@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/bitshifted/easycloud/common"
 	"github.com/bitshifted/easycloud/log"
 )
 
@@ -16,7 +17,6 @@ const (
 	Local               BackendType = "local"
 	Remote              BackendType = "remote"
 	TerraformMinVersion             = "1.9.0"
-	defaultHomeDirName              = ".easycloud"
 )
 
 type Terraform struct {
@@ -80,19 +80,25 @@ func (lb *LocalBackend) postLoad(config *Configuration) error {
 }
 
 func calculateLocalBackendPath(config *Configuration) (string, error) {
-	// set deffault path to be in user home dir
-	homeDir, err := os.UserHomeDir()
+	// set default path to be in user home dir
+	homeDir, err := osHomeDir()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to get user home directory")
 		return "", err
 	}
-	templateUrl, err := url.Parse(config.TemplateRepo)
-	if err != nil {
-		log.Logger.Error().Err(err).Msgf("Failed to parse repository URL %s", config.TemplateRepo)
-		return "", err
+	curPath := path.Join(homeDir, common.DefaultHomeDirName)
+	if config.TemplateRepo != "" {
+		templateUrl, err := url.Parse(config.TemplateRepo)
+		if err != nil {
+			log.Logger.Error().Err(err).Msgf("Failed to parse repository URL %s", config.TemplateRepo)
+			return "", err
+		}
+		curPath = path.Join(curPath, templateUrl.Host, templateUrl.Path)
 	}
-	finalPath := path.Join(homeDir, defaultHomeDirName, templateUrl.Host, templateUrl.Path)
-	return finalPath, nil
+	if config.TemplateDir != "" {
+		curPath = path.Join(curPath, config.TemplateDir)
+	}
+	return curPath, nil
 }
 
 type TerraformProvider struct {

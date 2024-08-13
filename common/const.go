@@ -1,7 +1,8 @@
 package common
 
 const (
-	DefaultConfigFileName = "easycloud.yaml"
+	DefaultConfigFileName = "liftoff.yaml"
+	DefaultHomeDirName    = ".liftoff"
 	DefaultOutputDir      = "target"
 	DefaultTerraformDir   = "terraform"
 	DefaultAnsibleDir     = "ansible"
