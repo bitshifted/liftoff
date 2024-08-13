@@ -1,4 +1,4 @@
-module github.com/bitshifted/easycloud
+module github.com/bitshifted/liftoff
 
 go 1.22.5
 

@@ -5,8 +5,8 @@ import (
 	"path"
 	"testing"
 
-	"github.com/bitshifted/easycloud/common"
-	"github.com/bitshifted/easycloud/log"
+	"github.com/bitshifted/liftoff/common"
+	"github.com/bitshifted/liftoff/log"
 	"github.com/stretchr/testify/suite"
 )
 

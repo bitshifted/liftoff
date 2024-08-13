@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/bitshifted/easycloud/log"
+	"github.com/bitshifted/liftoff/log"
 )
 
 type ValueType int8

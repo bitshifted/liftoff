@@ -3,7 +3,7 @@ package config
 import (
 	"os"
 
-	"github.com/bitshifted/easycloud/log"
+	"github.com/bitshifted/liftoff/log"
 	"gopkg.in/yaml.v3"
 )
 
