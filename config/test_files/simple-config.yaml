@@ -1,0 +1,6 @@
+---
+terraform:
+  backend:
+    type: local
+  providers:
+    hcloud:
