@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	"github.com/bitshifted/easycloud/log"
+	"github.com/bitshifted/liftoff/log"
 	"github.com/stretchr/testify/suite"
 )
 

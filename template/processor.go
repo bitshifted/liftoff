@@ -7,9 +7,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/bitshifted/easycloud/common"
-	"github.com/bitshifted/easycloud/config"
-	"github.com/bitshifted/easycloud/log"
+	"github.com/bitshifted/liftoff/common"
+	"github.com/bitshifted/liftoff/config"
+	"github.com/bitshifted/liftoff/log"
 )
 
 const (
