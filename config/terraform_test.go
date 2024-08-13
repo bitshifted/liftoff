@@ -16,7 +16,7 @@ type TerraformTestSuite struct {
 
 func (ts *TerraformTestSuite) SetupSuite() {
 	// Initialize logger
-	log.Init()
+	log.Init(true)
 	log.Logger.Info().Msg("Running TerraformTestSuite")
 }
 

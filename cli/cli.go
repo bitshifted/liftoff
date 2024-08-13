@@ -18,6 +18,7 @@ type CLI struct {
 	TerraformPath   string      `help:"Path to Terraform binary"`
 	PlaybookBinPath string      `help:"Path to ansible-playbook binary"`
 	ConfigFile      string      `help:"Path to configuration file"`
+	EnableDebug     bool        `help:"Enable debug logging"`
 	Setup           SetupCmd    `cmd:"" help:"Setup and configure infrastructure"`
 	TearDown        TearDownCmd `cmd:"" name:"teardown" help:"Cleanup created infrastructure"`
 }
