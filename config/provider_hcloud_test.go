@@ -13,7 +13,7 @@ type ProviderHcloudTestSuite struct {
 
 func (ts *ProviderHcloudTestSuite) SetupSuite() {
 	// Initialize logger
-	log.Init()
+	log.Init(true)
 	log.Logger.Info().Msg("Running UtilsTestSuite")
 }
 

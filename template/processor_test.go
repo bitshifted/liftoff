@@ -12,7 +12,7 @@ import (
 )
 
 func TestProcessTerraformFiles(t *testing.T) {
-	log.Init()
+	log.Init(true)
 	tmpDir, err := os.MkdirTemp("", "template-test")
 	assert.NoError(t, err)
 	processor := TemplateProcessor{
