@@ -1,0 +1,17 @@
+terraform {
+[[ with .Terraform.Backend ]]
+  backend "[[ .Type ]]" {
+    [[ with .Local ]]
+    path = "[[ .Path ]]"
+    [[ end ]]
+  }
+[[ end ]]
+[[ with .Terraform.Providers.Hcloud ]]
+  required_providers {
+    hcloud = {
+      source  = "hetznercloud/hcloud"
+      version = "~> 1.45"
+    }
+  }
+[[ end ]]
+}

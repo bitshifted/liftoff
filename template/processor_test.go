@@ -26,4 +26,10 @@ func TestProcessTerraformFiles(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "terraform.tf"))
 	assert.NoError(t, err)
+	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "sub1/file1.txt"))
+	assert.NoError(t, err)
+	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "sub1/test.tf"))
+	assert.NoError(t, err)
+	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "sub2/sub3/test.tf"))
+	assert.NoError(t, err)
 }

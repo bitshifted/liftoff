@@ -46,31 +46,45 @@ func (tp *TemplateProcessor) ProcessTerraformTemplate(config *config.Configurati
 		log.Logger.Error().Err(err).Msg("Failed to create output directory")
 		return err
 	}
-	err = filepath.Walk(templateDir, func(path string, info os.FileInfo, err error) error {
-		log.Logger.Debug().Msgf("Walk file %s", path)
+	err = filepath.Walk(templateDir, func(fpath string, info os.FileInfo, err error) error {
+		log.Logger.Debug().Msgf("Walk file %s", fpath)
 		if err != nil {
 			return err
 		}
-		if !info.IsDir() {
-			processTemplate(path, config, outputDir)
+		relPath, err := filepath.Rel(tp.BaseDir, fpath)
+		if err != nil {
+			log.Logger.Error().Err(err).Msgf("Failed to find realtive path for %s", fpath)
+			return err
+		}
+		if info.IsDir() {
+			log.Logger.Debug().Msgf("Creating output directory %s", relPath)
+			err = os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
+			if err != nil {
+				log.Logger.Error().Err(err).Msgf("Failed to create directory %s", relPath)
+				return err
+			}
+		} else {
+			tp.processTemplate(path.Join(tp.BaseDir, relPath), config)
 		}
 		return nil
 	})
 	return err
 }
 
-func processTemplate(templatePath string, config *config.Configuration, outputDir string) error {
+func (tp *TemplateProcessor) processTemplate(templatePath string, config *config.Configuration) error {
 	log.Logger.Debug().Msgf("Processing template file %s", templatePath)
 	tmpl, err := template.New(filepath.Base(templatePath)).Delims("[[", "]]").ParseFiles(templatePath)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to parse template")
 		return err
 	}
-	outName, err := extractFileNameFromPath(templatePath)
+	outName := extractFileNameFromPath(templatePath)
+	relPath, err := filepath.Rel(tp.BaseDir, outName)
 	if err != nil {
+		log.Logger.Error().Err(err).Msgf("Failed to find realtive path for %s", outName)
 		return err
 	}
-	outFilePath := path.Join(outputDir, outName)
+	outFilePath := path.Join(tp.OutputDir, relPath)
 	log.Logger.Debug().Msgf("Output file path: %s", outFilePath)
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
@@ -80,7 +94,9 @@ func processTemplate(templatePath string, config *config.Configuration, outputDi
 	return tmpl.Execute(outFile, config)
 }
 
-func extractFileNameFromPath(filePath string) (string, error) {
-	name := filepath.Base(filePath)
-	return strings.Split(name, templateSuffix)[0], nil
+func extractFileNameFromPath(filePath string) string {
+	if strings.HasSuffix(filePath, templateSuffix) {
+		return strings.Replace(filePath, templateSuffix, "", 1)
+	}
+	return filePath
 }
