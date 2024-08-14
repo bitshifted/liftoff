@@ -2,7 +2,7 @@ GOPATH := $(shell go env GOPATH)
 TARGET_DIR := target
 
 init:
-	mkdir ${TARGET_DIR}
+	mkdir -p  ${TARGET_DIR}/{linux,windows,macos}
 
 clean:
 	rm -rvf ${TARGET_DIR}
@@ -18,7 +18,7 @@ test:
 	go tool cover -html=${TARGET_DIR}/coverage.out -o ${TARGET_DIR}/coverage.html
 
 build: clean init lint test
-	GOOS=linux go build -o ${TARGET_DIR}/liftoff
-	GOOS=windows go build -o ${TARGET_DIR}/liftoff.exe
-	GOOS=darwin go build -o ${TARGET_DIR}/liftoff
+	GOOS=linux go build -o ${TARGET_DIR}/linux/liftoff
+	GOOS=windows go build -o ${TARGET_DIR}/windows/liftoff.exe
+	GOOS=darwin go build -o ${TARGET_DIR}/macos//liftoff
 
