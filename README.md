@@ -1,2 +1,3 @@
-# easycloud
-Rapid infrastructure deployment for alternative cloud providers
+# liftoff
+
+Rapid infrastructure deployment for multiple cloud providers
