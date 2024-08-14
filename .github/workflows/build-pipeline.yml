@@ -22,7 +22,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: liftoff-binary
-          path: target/liftoff
+          path: target/linux/liftoff
   publish-docker-image:
     if:  ${{ github.event_name == 'push' }}
     needs: build-and-test
@@ -37,6 +37,7 @@ jobs:
         uses: bitshifted/git-auto-semver@v1
         with:
           create_tag: true
+          initial_version: 0.1.0
       - name: Download binary artifact
         uses: actions/download-artifact@v3
         with:
