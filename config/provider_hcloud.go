@@ -33,6 +33,8 @@ func (hc *ProviderHcloud) postLoad() error {
 		} else {
 			hc.Token = ""
 		}
+	case common.FileContentString:
+		// add logic here
 	}
 	return nil
 }

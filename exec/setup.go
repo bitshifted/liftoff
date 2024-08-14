@@ -51,7 +51,10 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 			OutputDir: output,
 		}
 		log.Logger.Info().Msg("Processing Terraform configuration...")
-		processor.ProcessTerraformTemplate(ec.Config)
+		err = processor.ProcessTerraformTemplate(ec.Config)
+		if err != nil {
+			return err
+		}
 		tfOutput, err = ec.executeTerraform()
 		if err != nil {
 			return err
@@ -63,6 +66,7 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 	if !ec.SkipAnsible {
 		log.Logger.Info().Msg("Processing Ansible configuration...")
 		log.Logger.Debug().Msgf("Terraform output: %v", tfOutput)
+		return ec.executeAnsiblePlaybook()
 	} else {
 		log.Logger.Info().Msg("Skipping Ansible configuration")
 	}
@@ -72,16 +76,16 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 
 func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 	if ec.TerraformPath == "" {
-		path, err := osExec.LookPath(defaltTerraformCmd)
+		tfCmdPath, err := osExec.LookPath(defaltTerraformCmd)
 		if err != nil {
 			log.Logger.Error().Err(err).Msg("Failed to lookup Terraform path")
 			return nil, err
 		}
-		ec.TerraformPath = path
+		ec.TerraformPath = tfCmdPath
 	}
 	log.Logger.Debug().Msgf("Using Terraform command: %s", ec.TerraformPath)
 
-	cmdInit := osExec.Command(ec.TerraformPath, "init")
+	cmdInit := osExec.Command(ec.TerraformPath, "init") //nolint:gosec
 	cmdInit.Stdout = os.Stdout
 	cmdInit.Stderr = os.Stderr
 	cmdInit.Dir = ec.TerraformWorkDir
@@ -93,7 +97,7 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 		return nil, err
 	}
 	log.Logger.Info().Msg("Running Terraform apply")
-	cmdApply := osExec.Command(ec.TerraformPath, "apply", "-auto-approve")
+	cmdApply := osExec.Command(ec.TerraformPath, "apply", "-auto-approve") //nolint:gosec
 	cmdApply.Stdout = os.Stdout
 	cmdApply.Stderr = os.Stderr
 	cmdApply.Dir = ec.TerraformWorkDir
@@ -103,7 +107,7 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 		return nil, err
 	}
 	// run terraform output
-	cmdOut := osExec.Command(ec.TerraformPath, "outpit", "-json")
+	cmdOut := osExec.Command(ec.TerraformPath, "output", "-json") //nolint:gosec
 	cmdOut.Dir = ec.TerraformWorkDir
 	r, w, err := os.Pipe()
 	defer w.Close()
@@ -118,7 +122,10 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 		return nil, nil
 	}
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err = io.Copy(&buf, r)
+	if err != nil {
+		return nil, err
+	}
 	var outputs map[string]interface{}
 	err = json.Unmarshal(buf.Bytes(), &outputs)
 	if err != nil {

@@ -35,12 +35,12 @@ func (s *SetupCmd) Run(ctx *kong.Context) error {
 	log.Logger.Info().Msg("Executing setup...")
 	configFile := extractArgumentValue(ctx.Args, configFileArg, 1, common.DefaultConfigFileName)
 	log.Logger.Info().Msgf("Reading configuration file %s", configFile)
-	config, err := config.LoadConfig(configFile)
+	conf, err := config.LoadConfig(configFile)
 	if err != nil {
 		return err
 	}
 	executionConfig := exec.ExecutionConfig{
-		Config:              config,
+		Config:              conf,
 		SkipTerraform:       s.SkipTerraform,
 		SkipAnsible:         s.SkipAnsible,
 		TerraformPath:       extractArgumentValue(ctx.Args, terraformPathArg, 1, ""),

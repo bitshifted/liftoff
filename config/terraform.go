@@ -42,7 +42,6 @@ func (t *Terraform) postLoad(config *Configuration) error {
 	} else {
 		return t.Providers.postLoad()
 	}
-
 }
 
 type TerraformBackend struct {
@@ -56,6 +55,8 @@ func (tb *TerraformBackend) postLoad(config *Configuration) error {
 		if tb.Local == nil {
 			tb.Local = &LocalBackend{}
 		}
+	case Remote:
+		// add logic here
 	}
 	if tb.Local != nil {
 		return tb.Local.postLoad(config)
@@ -88,12 +89,12 @@ func calculateLocalBackendPath(config *Configuration) (string, error) {
 	}
 	curPath := path.Join(homeDir, common.DefaultHomeDirName)
 	if config.TemplateRepo != "" {
-		templateUrl, err := url.Parse(config.TemplateRepo)
+		templateURL, err := url.Parse(config.TemplateRepo)
 		if err != nil {
 			log.Logger.Error().Err(err).Msgf("Failed to parse repository URL %s", config.TemplateRepo)
 			return "", err
 		}
-		curPath = path.Join(curPath, templateUrl.Host, templateUrl.Path)
+		curPath = path.Join(curPath, templateURL.Host, templateURL.Path)
 	}
 	if config.TemplateDir != "" {
 		curPath = path.Join(curPath, config.TemplateDir)
