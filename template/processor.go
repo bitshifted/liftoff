@@ -23,7 +23,7 @@ type TemplateProcessor struct {
 	AnsibleDir   string
 }
 
-func (tp *TemplateProcessor) ProcessTerraformTemplate(config *config.Configuration) error {
+func (tp *TemplateProcessor) ProcessTerraformTemplate(conf *config.Configuration) error {
 	if tp.TerraformDir == "" {
 		tp.TerraformDir = common.DefaultTerraformDir
 	}
@@ -53,25 +53,20 @@ func (tp *TemplateProcessor) ProcessTerraformTemplate(config *config.Configurati
 		}
 		relPath, err := filepath.Rel(tp.BaseDir, fpath)
 		if err != nil {
-			log.Logger.Error().Err(err).Msgf("Failed to find realtive path for %s", fpath)
+			log.Logger.Error().Err(err).Msgf("Failed to find reataive path for %s", fpath)
 			return err
 		}
 		if info.IsDir() {
 			log.Logger.Debug().Msgf("Creating output directory %s", relPath)
-			err = os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
-			if err != nil {
-				log.Logger.Error().Err(err).Msgf("Failed to create directory %s", relPath)
-				return err
-			}
+			return os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
 		} else {
-			tp.processTemplate(path.Join(tp.BaseDir, relPath), config)
+			return tp.processTemplate(path.Join(tp.BaseDir, relPath), conf)
 		}
-		return nil
 	})
 	return err
 }
 
-func (tp *TemplateProcessor) processTemplate(templatePath string, config *config.Configuration) error {
+func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration) error {
 	log.Logger.Debug().Msgf("Processing template file %s", templatePath)
 	tmpl, err := template.New(filepath.Base(templatePath)).Delims("[[", "]]").ParseFiles(templatePath)
 	if err != nil {
@@ -81,7 +76,7 @@ func (tp *TemplateProcessor) processTemplate(templatePath string, config *config
 	outName := extractFileNameFromPath(templatePath)
 	relPath, err := filepath.Rel(tp.BaseDir, outName)
 	if err != nil {
-		log.Logger.Error().Err(err).Msgf("Failed to find realtive path for %s", outName)
+		log.Logger.Error().Err(err).Msgf("Failed to find relative path for %s", outName)
 		return err
 	}
 	outFilePath := path.Join(tp.OutputDir, relPath)
@@ -91,7 +86,7 @@ func (tp *TemplateProcessor) processTemplate(templatePath string, config *config
 		log.Logger.Error().Err(err).Msg("Failed to create output template file")
 		return err
 	}
-	return tmpl.Execute(outFile, config)
+	return tmpl.Execute(outFile, conf)
 }
 
 func extractFileNameFromPath(filePath string) string {

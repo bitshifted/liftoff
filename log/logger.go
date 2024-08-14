@@ -22,5 +22,4 @@ func Init(enableDebug bool) {
 			TimeFormat: time.RFC3339,
 		}).Level(zerolog.InfoLevel).With().Timestamp().Logger()
 	}
-
 }

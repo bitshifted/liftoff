@@ -30,7 +30,7 @@ func ValueTypeFromString(input string) ValueType {
 		log.Logger.Debug().Msgf("Found environment variable setting: %s", input)
 		return EnvVariableString
 	}
-	// check if it's file content refrence
+	// check if it's file content reference
 	if strings.HasPrefix(input, contentPrefix) {
 		log.Logger.Debug().Msgf("Found file content setting: %s", input)
 		return FileContentString
