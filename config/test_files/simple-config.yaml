@@ -4,3 +4,7 @@ terraform:
     type: local
   providers:
     hcloud:
+
+ansible:
+  inventory-file: 'my-inventory'
+  playbook-file: myplaybook.yaml

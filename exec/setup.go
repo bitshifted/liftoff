@@ -21,6 +21,7 @@ import (
 const (
 	defaltTerraformCmd = "terraform"
 	defaultAnsibleCmd  = "ansible-playbook"
+	tmpDirPrefix       = "liftoff_setup"
 )
 
 type ExecutionConfig struct {
@@ -30,6 +31,7 @@ type ExecutionConfig struct {
 	TerraformPath       string
 	AnsiblePlaybookPath string
 	TerraformWorkDir    string
+	AnsibleWorkDir      string
 }
 
 func (ec *ExecutionConfig) ExecuteSetup() error {
@@ -42,28 +44,43 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 		return errors.New("either template repository or template directory must be specified")
 	}
 	log.Logger.Info().Msgf("Template directory: %s", tmplDir)
-	output, err := os.MkdirTemp("", "easycloud_setup")
+	output, err := os.MkdirTemp("", tmpDirPrefix)
 	if err != nil {
 		return err
 	}
 	ec.TerraformWorkDir = path.Join(output, common.DefaultTerraformDir)
+	ec.AnsibleWorkDir = path.Join(output, common.DefaultAnsibleDir)
+	processor := template.TemplateProcessor{
+		BaseDir:   tmplDir,
+		OutputDir: output,
+	}
+	log.Logger.Info().Msg("Processing templates...")
+	err = processor.ProcessTemplates(ec.Config)
+	if err != nil {
+		return err
+	}
 	var tfOutput map[string]interface{}
+	if ec.TerraformPath == "" {
+		tfCmdPath, e := osExec.LookPath(defaltTerraformCmd)
+		if e != nil {
+			log.Logger.Error().Err(e).Msg("Failed to lookup Terraform path")
+			return e
+		}
+		ec.TerraformPath = tfCmdPath
+	}
+	log.Logger.Debug().Msgf("Using Terraform command: %s", ec.TerraformPath)
 	if !ec.SkipTerraform {
-		processor := template.TemplateProcessor{
-			BaseDir:   tmplDir,
-			OutputDir: output,
-		}
-		log.Logger.Info().Msg("Processing Terraform configuration...")
-		err = processor.ProcessTerraformTemplate(ec.Config)
-		if err != nil {
-			return err
-		}
-		tfOutput, err = ec.executeTerraform()
+		err = ec.executeTerraform()
 		if err != nil {
 			return err
 		}
 	} else {
 		log.Logger.Info().Msg("Skipping Terraform configuration")
+	}
+	tfOutput, err = ec.getTerraformOutputs()
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to get Terraform outputs")
+		return err
 	}
 
 	if !ec.SkipAnsible {
@@ -77,17 +94,7 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 	return nil
 }
 
-func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
-	if ec.TerraformPath == "" {
-		tfCmdPath, err := osExec.LookPath(defaltTerraformCmd)
-		if err != nil {
-			log.Logger.Error().Err(err).Msg("Failed to lookup Terraform path")
-			return nil, err
-		}
-		ec.TerraformPath = tfCmdPath
-	}
-	log.Logger.Debug().Msgf("Using Terraform command: %s", ec.TerraformPath)
-
+func (ec *ExecutionConfig) executeTerraform() error {
 	cmdInit := osExec.Command(ec.TerraformPath, "init") //nolint:gosec
 	cmdInit.Stdout = os.Stdout
 	cmdInit.Stderr = os.Stderr
@@ -97,7 +104,7 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 	err := cmdInit.Run()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform init")
-		return nil, err
+		return err
 	}
 	log.Logger.Info().Msg("Running Terraform apply")
 	cmdApply := osExec.Command(ec.TerraformPath, "apply", "-auto-approve") //nolint:gosec
@@ -107,9 +114,13 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 	err = cmdApply.Run()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform apply")
-		return nil, err
 	}
-	// run terraform output
+	return err
+}
+
+func (ec *ExecutionConfig) getTerraformOutputs() (map[string]interface{}, error) {
+	// // run terraform output
+	log.Logger.Info().Msg("Collecting Terraform outputs")
 	cmdOut := osExec.Command(ec.TerraformPath, "output", "-json") //nolint:gosec
 	cmdOut.Dir = ec.TerraformWorkDir
 	r, w, err := os.Pipe()
@@ -125,19 +136,42 @@ func (ec *ExecutionConfig) executeTerraform() (map[string]interface{}, error) {
 		return nil, nil
 	}
 	var buf bytes.Buffer
-	_, err = io.Copy(&buf, r)
-	if err != nil {
-		return nil, err
-	}
 	var outputs map[string]interface{}
-	err = json.Unmarshal(buf.Bytes(), &outputs)
-	if err != nil {
-		log.Logger.Error().Err(err).Msg("Failed to unmarshal Terraform output")
-		return nil, err
+	if buf.Len() == 0 {
+		outputs = make(map[string]interface{})
+	} else {
+		_, err = io.Copy(&buf, r)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(buf.Bytes(), &outputs)
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("Failed to unmarshal Terraform output")
+			return nil, err
+		}
 	}
+
 	return outputs, nil
 }
 
 func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
-	return nil
+	if ec.AnsiblePlaybookPath == "" {
+		ansibleCmdPath, err := osExec.LookPath(defaultAnsibleCmd)
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("Failed to lookup ansible-playbook path")
+			return err
+		}
+		ec.TerraformPath = ansibleCmdPath
+	}
+	log.Logger.Debug().Msgf("Using ansible-playbook command: %s", ec.AnsiblePlaybookPath)
+	log.Logger.Info().Msg("Running ansible-playbook")
+	cmdApply := osExec.Command(ec.AnsiblePlaybookPath, "-i", ec.Config.Ansible.InventoryFile, ec.Config.Ansible.PlaybookFile) //nolint:gosec
+	cmdApply.Stdout = os.Stdout
+	cmdApply.Stderr = os.Stderr
+	cmdApply.Dir = ec.AnsibleWorkDir
+	err := cmdApply.Run()
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to run ansible-playbook")
+	}
+	return err
 }

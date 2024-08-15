@@ -1,8 +1,11 @@
 ---
-template-dir: /home/vlada/work/bitshift/altclouds/hetzner/nat-gateway
+template-dir: /home/vlada/work/bitshift/altclouds/hetzner/keycloak-simple
 terraform:
   backend:
     type: local
   providers:
     hcloud:
       token: "${HCLOUD_TOKEN}"
+ansible:
+  inventory-file: inventory
+  playbook-file: keycloak-setup.yaml

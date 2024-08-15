@@ -4,9 +4,10 @@
 package common
 
 const (
-	DefaultConfigFileName = "liftoff.yaml"
-	DefaultHomeDirName    = ".liftoff"
-	DefaultOutputDir      = "target"
-	DefaultTerraformDir   = "terraform"
-	DefaultAnsibleDir     = "ansible"
+	DefaultConfigFileName       = "liftoff.yaml"
+	DefaultHomeDirName          = ".liftoff"
+	DefaultOutputDir            = "target"
+	DefaultTerraformDir         = "terraform"
+	DefaultAnsibleDir           = "ansible"
+	DefaultAnsibleInventoryFile = "inventory"
 )
