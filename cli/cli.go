@@ -4,6 +4,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/alecthomas/kong"
 	"github.com/bitshifted/liftoff/common"
 	"github.com/bitshifted/liftoff/config"
@@ -24,6 +26,7 @@ type CLI struct {
 	EnableDebug     bool        `help:"Enable debug logging"`
 	Setup           SetupCmd    `cmd:"" help:"Setup and configure infrastructure"`
 	TearDown        TearDownCmd `cmd:"" name:"teardown" help:"Cleanup created infrastructure"`
+	Version         VersionCmd  `cmd:"" name:"version" help:"Display version information"`
 }
 
 type SetupCmd struct {
@@ -32,6 +35,9 @@ type SetupCmd struct {
 }
 
 type TearDownCmd struct {
+}
+
+type VersionCmd struct {
 }
 
 func (s *SetupCmd) Run(ctx *kong.Context) error {
@@ -54,6 +60,12 @@ func (s *SetupCmd) Run(ctx *kong.Context) error {
 
 func (t *TearDownCmd) Run(ctx *kong.Context) error {
 	log.Logger.Info().Msg("Executing teardown...")
+	return nil
+}
+
+func (vc *VersionCmd) Run(ctx *kong.Context) error {
+	fmt.Printf("Version: %s\nBuild number: %s\nCommit ID: %s\n",
+		ProgramVersion.Version, ProgramVersion.BuildNumber, ProgramVersion.CommitID)
 	return nil
 }
 
