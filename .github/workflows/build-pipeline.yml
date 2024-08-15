@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Setup Go
         uses: actions/setup-go@v4
         with: 
@@ -26,6 +29,7 @@ jobs:
         uses: bitshifted/git-auto-semver@v1
         with:
           create_tag: true
+          initial_version: 0.1.0
       - name: Setup environment variables
         if: ${{ github.event_name == 'push' }}
         run: |
