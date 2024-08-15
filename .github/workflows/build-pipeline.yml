@@ -26,7 +26,6 @@ jobs:
         uses: bitshifted/git-auto-semver@v1
         with:
           create_tag: true
-          initial_version: 0.1.0
       - name: Setup environment variables
         if: ${{ github.event_name == 'push' }}
         run: |
@@ -34,7 +33,7 @@ jobs:
           echo "GIT_COMMIT_ID=$(echo $GITHUB_SHA)" >> $GITHUB_ENV
       - name: Build
         run: |
-          echo "TIMESTAMP: $TIMESTAMP"
+          echo "VERSION: $VERSION"
           echo "GIT_COMMIT_ID: $GIT_COMMIT_ID"
           make build
       - name: Upload binary
