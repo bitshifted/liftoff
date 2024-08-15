@@ -15,10 +15,11 @@ const (
 )
 
 type Configuration struct {
-	TemplateRepo   string     `yaml:"template-repo,omitempty"`
-	TempateVersion string     `yaml:"template-version,omitempty"`
-	TemplateDir    string     `yaml:"template-dir,omitempty"`
-	Terraform      *Terraform `yaml:"terraform,omitempty"`
+	TemplateRepo   string         `yaml:"template-repo,omitempty"`
+	TempateVersion string         `yaml:"template-version,omitempty"`
+	TemplateDir    string         `yaml:"template-dir,omitempty"`
+	Terraform      *Terraform     `yaml:"terraform,omitempty"`
+	Ansible        *AnsibleConfig `yaml:"ansible,omitempty"`
 }
 
 func LoadConfig(path string) (*Configuration, error) {

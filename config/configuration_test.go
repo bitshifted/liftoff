@@ -20,6 +20,10 @@ func TestLoadConfigShouldPass(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, localPath, config.Terraform.Backend.Local.Path)
+	// ansible config
+	assert.NotNil(t, config.Ansible)
+	assert.Equal(t, "my-inventory", config.Ansible.InventoryFile)
+	assert.Equal(t, "myplaybook.yaml", config.Ansible.PlaybookFile)
 }
 
 func TestShouldErrorForInvalidBackendType(t *testing.T) {

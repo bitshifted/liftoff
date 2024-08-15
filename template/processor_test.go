@@ -25,7 +25,7 @@ func TestProcessTerraformFiles(t *testing.T) {
 	t.Setenv("HCLOUD_TOKEN", "foo")
 	config, err := config.LoadConfig("test_files/sample-config.yaml")
 	assert.NoError(t, err)
-	err = processor.ProcessTerraformTemplate(config)
+	err = processor.ProcessTemplates(config)
 	assert.NoError(t, err)
 	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "terraform.tf"))
 	assert.NoError(t, err)
@@ -34,5 +34,9 @@ func TestProcessTerraformFiles(t *testing.T) {
 	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "sub1/test.tf"))
 	assert.NoError(t, err)
 	_, err = os.Stat(path.Join(tmpDir, common.DefaultTerraformDir, "sub2/sub3/test.tf"))
+	assert.NoError(t, err)
+	_, err = os.Stat(path.Join(tmpDir, common.DefaultAnsibleDir, "inventory"))
+	assert.NoError(t, err)
+	_, err = os.Stat(path.Join(tmpDir, common.DefaultAnsibleDir, "roles/some-role/tasks/main.yaml"))
 	assert.NoError(t, err)
 }

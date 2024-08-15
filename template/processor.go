@@ -26,47 +26,39 @@ type TemplateProcessor struct {
 	AnsibleDir   string
 }
 
-func (tp *TemplateProcessor) ProcessTerraformTemplate(conf *config.Configuration) error {
+func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error {
+	// process Terraform templates
 	if tp.TerraformDir == "" {
 		tp.TerraformDir = common.DefaultTerraformDir
 	}
-	templateDir := path.Join(tp.BaseDir, tp.TerraformDir)
-	log.Logger.Debug().Msgf("template directory: %s", templateDir)
-	var outputDir string
-	if tp.OutputDir == "" {
-		tp.OutputDir = common.DefaultOutputDir
-		outputDir = path.Join(tp.BaseDir, tp.OutputDir, common.DefaultTerraformDir)
-	} else {
-		if filepath.IsAbs(tp.OutputDir) {
-			outputDir = path.Join(tp.OutputDir, common.DefaultTerraformDir)
-		} else {
-			outputDir = path.Join(tp.BaseDir, tp.OutputDir, common.DefaultTerraformDir)
-		}
-	}
-	log.Logger.Info().Msgf("Output directory: %s", outputDir)
+	tfTemplateDir := path.Join(tp.BaseDir, tp.TerraformDir)
+	log.Logger.Debug().Msgf("Terraform template directory: %s", tfTemplateDir)
+	outputDir := tp.calculateOutputDirectory(common.DefaultTerraformDir)
+	log.Logger.Info().Msgf("Terraform output directory: %s", outputDir)
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to create output directory")
 		return err
 	}
-	err = filepath.Walk(templateDir, func(fpath string, info os.FileInfo, err error) error {
-		log.Logger.Debug().Msgf("Walk file %s", fpath)
-		if err != nil {
-			return err
-		}
-		relPath, err := filepath.Rel(tp.BaseDir, fpath)
-		if err != nil {
-			log.Logger.Error().Err(err).Msgf("Failed to find reataive path for %s", fpath)
-			return err
-		}
-		if info.IsDir() {
-			log.Logger.Debug().Msgf("Creating output directory %s", relPath)
-			return os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
-		} else {
-			return tp.processTemplate(path.Join(tp.BaseDir, relPath), conf)
-		}
-	})
-	return err
+	err = tp.fileWalker(tfTemplateDir, conf)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to process Terraform templates")
+		return err
+	}
+	// process Ansible templates
+	if tp.AnsibleDir == "" {
+		tp.AnsibleDir = common.DefaultAnsibleDir
+	}
+	ansibleTemplateDir := path.Join(tp.BaseDir, tp.AnsibleDir)
+	log.Logger.Debug().Msgf("Ansible template directory: %s", ansibleTemplateDir)
+	outputDir = tp.calculateOutputDirectory(common.DefaultAnsibleDir)
+	log.Logger.Info().Msgf("Ansible output directory: %s", outputDir)
+	err = os.MkdirAll(outputDir, os.ModePerm)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to create output directory")
+		return err
+	}
+	return tp.fileWalker(ansibleTemplateDir, conf)
 }
 
 func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration) error {
@@ -97,4 +89,39 @@ func extractFileNameFromPath(filePath string) string {
 		return strings.Replace(filePath, templateSuffix, "", 1)
 	}
 	return filePath
+}
+
+func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configuration) error {
+	return filepath.Walk(templateDir, func(fpath string, info os.FileInfo, err error) error {
+		log.Logger.Debug().Msgf("Walk file %s", fpath)
+		if err != nil {
+			return err
+		}
+		relPath, err := filepath.Rel(tp.BaseDir, fpath)
+		if err != nil {
+			log.Logger.Error().Err(err).Msgf("Failed to find reataive path for %s", fpath)
+			return err
+		}
+		if info.IsDir() {
+			log.Logger.Debug().Msgf("Creating output directory %s", relPath)
+			return os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
+		} else {
+			return tp.processTemplate(path.Join(tp.BaseDir, relPath), conf)
+		}
+	})
+}
+
+func (tp *TemplateProcessor) calculateOutputDirectory(dirName string) string {
+	var outputDir string
+	if tp.OutputDir == "" {
+		tp.OutputDir = common.DefaultOutputDir
+		outputDir = path.Join(tp.BaseDir, tp.OutputDir, dirName)
+	} else {
+		if filepath.IsAbs(tp.OutputDir) {
+			outputDir = path.Join(tp.OutputDir, dirName)
+		} else {
+			outputDir = path.Join(tp.BaseDir, tp.OutputDir, dirName)
+		}
+	}
+	return outputDir
 }
