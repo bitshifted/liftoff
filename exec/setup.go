@@ -13,26 +13,13 @@ import (
 	"path"
 
 	"github.com/bitshifted/liftoff/common"
-	"github.com/bitshifted/liftoff/config"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/bitshifted/liftoff/template"
 )
 
 const (
-	defaltTerraformCmd = "terraform"
-	defaultAnsibleCmd  = "ansible-playbook"
-	tmpDirPrefix       = "liftoff_setup"
+	tmpDirPrefix = "liftoff_setup"
 )
-
-type ExecutionConfig struct {
-	Config              *config.Configuration
-	SkipTerraform       bool
-	SkipAnsible         bool
-	TerraformPath       string
-	AnsiblePlaybookPath string
-	TerraformWorkDir    string
-	AnsibleWorkDir      string
-}
 
 func (ec *ExecutionConfig) ExecuteSetup() error {
 	repo := ec.Config.TemplateRepo
