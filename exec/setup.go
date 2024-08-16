@@ -95,6 +95,7 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 }
 
 func (ec *ExecutionConfig) executeTerraform() error {
+	// TODO copy .terraform.hcl.lock if exists in workspace
 	cmdInit := osExec.Command(ec.TerraformPath, "init") //nolint:gosec
 	cmdInit.Stdout = os.Stdout
 	cmdInit.Stderr = os.Stderr
@@ -162,6 +163,10 @@ func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
 			return err
 		}
 		ec.TerraformPath = ansibleCmdPath
+	}
+	if ec.Config.Ansible == nil || ec.Config.Ansible.InventoryFile == "" || ec.Config.Ansible.PlaybookFile == "" {
+		log.Logger.Warn().Msg("Either Ansible inventory file or playbook were not specified. Aborting.")
+		return nil
 	}
 	log.Logger.Debug().Msgf("Using ansible-playbook command: %s", ec.AnsiblePlaybookPath)
 	log.Logger.Info().Msg("Running ansible-playbook")

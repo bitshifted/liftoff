@@ -4,6 +4,7 @@
 package template
 
 import (
+	"errors"
 	"os"
 	"path"
 	"path/filepath"
@@ -57,6 +58,11 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to create output directory")
 		return err
+	}
+	_, err = os.Stat(ansibleTemplateDir)
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		log.Logger.Warn().Msgf("Ansible template directory %s does not exist. Skipping", ansibleTemplateDir)
+		return nil
 	}
 	return tp.fileWalker(ansibleTemplateDir, conf)
 }
