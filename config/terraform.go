@@ -9,22 +9,26 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/bitshifted/liftoff/common"
+	"github.com/bitshifted/liftoff/config/tfprovider"
 	"github.com/bitshifted/liftoff/log"
 )
 
 type BackendType string
 
 const (
-	Local               BackendType = "local"
-	Remote              BackendType = "remote"
-	TerraformMinVersion             = "1.9.0"
+	Local                     BackendType = "local"
+	Remote                    BackendType = "remote"
+	TerraformMinVersion                   = "1.9.0"
+	defaultTfStateFileName                = "terraform.tfstate"
+	defaultTfWorkspaceDirName             = "terraform.tf.d"
 )
 
 type Terraform struct {
-	Backend   *TerraformBackend  `yaml:"backend,omitempty"`
-	Providers *TerraformProvider `yaml:"providers"`
+	Backend   *TerraformBackend              `yaml:"backend,omitempty"`
+	Providers *tfprovider.TerraformProviders `yaml:"providers"`
 }
 
 func (t *Terraform) postLoad(config *Configuration) error {
@@ -43,7 +47,7 @@ func (t *Terraform) postLoad(config *Configuration) error {
 	if t.Providers == nil {
 		return errors.New("at least one Terraform provider is required")
 	} else {
-		return t.Providers.postLoad()
+		return t.Providers.PostLoad()
 	}
 }
 
@@ -68,23 +72,32 @@ func (tb *TerraformBackend) postLoad(config *Configuration) error {
 }
 
 type LocalBackend struct {
-	Path string `yaml:"path"`
+	Path      string `yaml:"path"`
+	Workspace string `yaml:"workspace"`
 }
 
 func (lb *LocalBackend) postLoad(config *Configuration) error {
-	if lb.Path == "" {
-		finalPath, err := calculateLocalBackendPath(config)
-		if err != nil {
-			return err
-		}
-		lb.Path = finalPath
-		return os.MkdirAll(finalPath, os.ModePerm)
+	var err error
+	defaultDir, err := calculateLocalBackendDefaultDir(config)
+	if err != nil {
+		return err
 	}
-	return nil
+	if lb.Path == "" {
+		lb.Path = path.Join(defaultDir, defaultTfStateFileName)
+		// create required directories
+		log.Logger.Debug().Msgf("Creating required directories for local backend: %s", filepath.Dir(lb.Path))
+		err = os.MkdirAll(filepath.Dir(lb.Path), os.ModePerm)
+	}
+	if lb.Workspace == "" {
+		lb.Workspace = path.Join(defaultDir, defaultTfWorkspaceDirName)
+		// create required directories
+		log.Logger.Debug().Msgf("Creating required directories for local workspace: %s", lb.Workspace)
+		err = os.MkdirAll(lb.Workspace, os.ModePerm)
+	}
+	return err
 }
 
-func calculateLocalBackendPath(config *Configuration) (string, error) {
-	// set default path to be in user home dir
+func calculateLocalBackendDefaultDir(config *Configuration) (string, error) {
 	homeDir, err := osHomeDir()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to get user home directory")
@@ -102,19 +115,6 @@ func calculateLocalBackendPath(config *Configuration) (string, error) {
 	if config.TemplateDir != "" {
 		curPath = path.Join(curPath, config.TemplateDir)
 	}
-	return curPath, nil
-}
 
-type TerraformProvider struct {
-	Hcloud *ProviderHcloud `yaml:"hcloud,omitempty"`
-}
-
-func (tp *TerraformProvider) postLoad() error {
-	if tp.Hcloud != nil {
-		err := tp.Hcloud.postLoad()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return path.Join(curPath), nil
 }

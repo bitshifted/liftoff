@@ -10,10 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	defaultTemplateRepo = "https://github.com/bitshifted/autoconfig-templates"
-)
-
 type Configuration struct {
 	TemplateRepo   string         `yaml:"template-repo,omitempty"`
 	TempateVersion string         `yaml:"template-version,omitempty"`
@@ -42,8 +38,5 @@ func LoadConfig(path string) (*Configuration, error) {
 }
 
 func (c *Configuration) postLoad() error {
-	if c.TemplateRepo == "" {
-		c.TemplateRepo = defaultTemplateRepo
-	}
 	return c.Terraform.postLoad(c)
 }

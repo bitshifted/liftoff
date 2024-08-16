@@ -4,6 +4,7 @@
 package config
 
 import (
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,14 +13,14 @@ import (
 func TestLoadConfigShouldPass(t *testing.T) {
 	config, err := LoadConfig("./test_files/simple-config.yaml")
 	assert.NoError(t, err)
-	assert.Equal(t, defaultTemplateRepo, config.TemplateRepo)
 	assert.NotNil(t, config.Terraform)
 	assert.NotNil(t, config.Terraform.Backend)
 	assert.Equal(t, Local, config.Terraform.Backend.Type)
-	localPath, err := calculateLocalBackendPath(config)
+	localPath, err := calculateLocalBackendDefaultDir(config)
 	assert.NoError(t, err)
 
-	assert.Equal(t, localPath, config.Terraform.Backend.Local.Path)
+	assert.Equal(t, path.Join(localPath, defaultTfStateFileName), config.Terraform.Backend.Local.Path)
+	assert.Equal(t, path.Join(localPath, defaultTfWorkspaceDirName), config.Terraform.Backend.Local.Workspace)
 	// ansible config
 	assert.NotNil(t, config.Ansible)
 	assert.Equal(t, "my-inventory", config.Ansible.InventoryFile)
