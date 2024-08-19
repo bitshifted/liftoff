@@ -16,7 +16,7 @@ func TestLoadConfigShouldPass(t *testing.T) {
 	assert.NotNil(t, config.Terraform)
 	assert.NotNil(t, config.Terraform.Backend)
 	assert.Equal(t, Local, config.Terraform.Backend.Type)
-	localPath, err := calculateLocalBackendDefaultDir(config)
+	localPath, err := calculateTFBaseDir(config)
 	assert.NoError(t, err)
 
 	assert.Equal(t, path.Join(localPath, defaultTfStateFileName), config.Terraform.Backend.Local.Path)

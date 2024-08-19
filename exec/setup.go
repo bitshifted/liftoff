@@ -87,8 +87,7 @@ func (ec *ExecutionConfig) executeTerraform() error {
 	cmdInit.Stdout = os.Stdout
 	cmdInit.Stderr = os.Stderr
 	cmdInit.Dir = ec.TerraformWorkDir
-	// TODO set TF_DATA_DIR to control where to store TF temp files
-	// cmdInit.Env = append(cmdInit.Env, "TF_DATA_DIR=" + ec.Config.Terraform.Backend.Type.)
+	cmdInit.Env = append(cmdInit.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
 	log.Logger.Debug().Msgf("Terraform work directory: %s", cmdInit.Dir)
 	log.Logger.Info().Msg("Running Terraform init...")
 	err := cmdInit.Run()
@@ -101,6 +100,7 @@ func (ec *ExecutionConfig) executeTerraform() error {
 	cmdApply.Stdout = os.Stdout
 	cmdApply.Stderr = os.Stderr
 	cmdApply.Dir = ec.TerraformWorkDir
+	cmdApply.Env = append(cmdApply.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
 	err = cmdApply.Run()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform apply")
@@ -113,6 +113,7 @@ func (ec *ExecutionConfig) getTerraformOutputs() (map[string]interface{}, error)
 	log.Logger.Info().Msg("Collecting Terraform outputs")
 	cmdOut := osExec.Command(ec.TerraformPath, "output", "-json") //nolint:gosec
 	cmdOut.Dir = ec.TerraformWorkDir
+	cmdOut.Env = append(cmdOut.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
 	r, w, err := os.Pipe()
 	defer w.Close()
 	if err != nil {
