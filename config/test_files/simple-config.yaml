@@ -8,3 +8,15 @@ terraform:
 ansible:
   inventory-file: 'my-inventory'
   playbook-file: myplaybook.yaml
+variables:
+  textvar: some text
+  intvar: 123
+  boolvar: true
+  complexvar:
+    stringprop: string property
+    floatprop: 3.14
+  listvar:
+    - name: item1
+      foo: bar-item-1
+    - name: item2
+      foo: bar-item-2

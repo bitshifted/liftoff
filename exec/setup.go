@@ -87,6 +87,8 @@ func (ec *ExecutionConfig) executeTerraform() error {
 	cmdInit.Stdout = os.Stdout
 	cmdInit.Stderr = os.Stderr
 	cmdInit.Dir = ec.TerraformWorkDir
+	// TODO set TF_DATA_DIR to control where to store TF temp files
+	// cmdInit.Env = append(cmdInit.Env, "TF_DATA_DIR=" + ec.Config.Terraform.Backend.Type.)
 	log.Logger.Debug().Msgf("Terraform work directory: %s", cmdInit.Dir)
 	log.Logger.Info().Msg("Running Terraform init...")
 	err := cmdInit.Run()

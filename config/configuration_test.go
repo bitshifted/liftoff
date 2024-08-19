@@ -25,6 +25,25 @@ func TestLoadConfigShouldPass(t *testing.T) {
 	assert.NotNil(t, config.Ansible)
 	assert.Equal(t, "my-inventory", config.Ansible.InventoryFile)
 	assert.Equal(t, "myplaybook.yaml", config.Ansible.PlaybookFile)
+	// verify variables
+	assert.NotNil(t, config.Variables)
+	textvar, ok := config.Variables["textvar"]
+	assert.True(t, ok)
+	assert.NotNil(t, textvar)
+	assert.Equal(t, "some text", textvar)
+	intvar, ok := config.Variables["intvar"]
+	assert.True(t, ok)
+	assert.NotNil(t, intvar)
+	assert.Equal(t, 123, intvar)
+	boolvar, ok := config.Variables["boolvar"]
+	assert.True(t, ok)
+	assert.NotNil(t, boolvar)
+	assert.Equal(t, true, boolvar)
+	complexvar, ok := config.Variables["complexvar"]
+	assert.True(t, ok)
+	assert.NotNil(t, complexvar)
+	assert.Equal(t, "string property", complexvar.(map[string]interface{})["stringprop"])
+	assert.Equal(t, 3.14, complexvar.(map[string]interface{})["floatprop"])
 }
 
 func TestShouldErrorForInvalidBackendType(t *testing.T) {
