@@ -100,6 +100,7 @@ func (ec *ExecutionConfig) executeTerraform() error {
 	cmdApply.Stdout = os.Stdout
 	cmdApply.Stderr = os.Stderr
 	cmdApply.Dir = ec.TerraformWorkDir
+	cmdApply.Env = os.Environ()
 	cmdApply.Env = append(cmdApply.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
 	err = cmdApply.Run()
 	if err != nil {

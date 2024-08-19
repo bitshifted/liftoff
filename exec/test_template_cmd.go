@@ -10,6 +10,7 @@ import (
 	"path"
 
 	"github.com/bitshifted/liftoff/common"
+	"github.com/bitshifted/liftoff/gitops"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/bitshifted/liftoff/template"
 )
@@ -18,6 +19,20 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 	repo := ec.Config.TemplateRepo
 	if repo == "" {
 		log.Logger.Info().Msg("Template repository not specified")
+	} else {
+		tmpDir, err := os.MkdirTemp("", "template_repo")
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("Failed to create temprorary directory for clone")
+		}
+		handler := gitops.GitHandler{
+			URL:         repo,
+			Version:     ec.Config.TempateVersion,
+			Destination: tmpDir,
+		}
+		err = handler.Fetch()
+		if err != nil {
+			return err
+		}
 	}
 	tmplDir := ec.Config.TemplateDir
 	if tmplDir == "" {
