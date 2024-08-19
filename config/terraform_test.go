@@ -36,7 +36,7 @@ func (ts *TerraformTestSuite) TestLocalBackendWhenTemplateRepoSpecified() {
 	conf := Configuration{
 		TemplateRepo: "https://github.com/my/repo.git",
 	}
-	finalPath, err := calculateLocalBackendDefaultDir(&conf)
+	finalPath, err := calculateTFBaseDir(&conf)
 	ts.NoError(err)
 	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "github.com", "my", "repo.git"), finalPath)
 }
@@ -50,7 +50,7 @@ func (ts *TerraformTestSuite) TestLocalBackendWhenOnlyDirectorySet() {
 	conf := Configuration{
 		TemplateDir: "/some/dir/path",
 	}
-	finalPath, err := calculateLocalBackendDefaultDir(&conf)
+	finalPath, err := calculateTFBaseDir(&conf)
 	ts.NoError(err)
 	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "some", "dir", "path"), finalPath)
 }
@@ -65,7 +65,7 @@ func (ts *TerraformTestSuite) TestBackendPathBothRepoDirSet() {
 		TemplateRepo: "https://github.com/my/repo.git",
 		TemplateDir:  "some/dir",
 	}
-	finalPath, err := calculateLocalBackendDefaultDir(&conf)
+	finalPath, err := calculateTFBaseDir(&conf)
 	ts.NoError(err)
 	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "github.com", "my", "repo.git", "some", "dir"), finalPath)
 }

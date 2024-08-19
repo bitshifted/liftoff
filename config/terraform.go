@@ -19,19 +19,27 @@ import (
 type BackendType string
 
 const (
-	Local                     BackendType = "local"
-	Remote                    BackendType = "remote"
-	TerraformMinVersion                   = "1.9.0"
-	defaultTfStateFileName                = "terraform.tfstate"
-	defaultTfWorkspaceDirName             = "terraform.tf.d"
+	Local                      BackendType = "local"
+	Remote                     BackendType = "remote"
+	TerraformMinVersion                    = "1.9.0"
+	defaultTfStateFileName                 = "terraform.tfstate"
+	defaultTfWorkspaceDirName              = "terraform.tf.d"
+	defaultTerraformDatDirName             = ".terraform"
 )
 
 type Terraform struct {
 	Backend   *TerraformBackend              `yaml:"backend,omitempty"`
 	Providers *tfprovider.TerraformProviders `yaml:"providers"`
+	DataDir   string
 }
 
 func (t *Terraform) postLoad(config *Configuration) error {
+	dataDir, err := calculateTFBaseDir(config)
+	log.Logger.Debug().Msgf("Terraform data directory: %s", dataDir)
+	if err != nil {
+		return err
+	}
+	t.DataDir = dataDir
 	// post process configuration
 	if t.Backend != nil {
 		switch t.Backend.Type {
@@ -78,7 +86,7 @@ type LocalBackend struct {
 
 func (lb *LocalBackend) postLoad(config *Configuration) error {
 	var err error
-	defaultDir, err := calculateLocalBackendDefaultDir(config)
+	defaultDir, err := calculateTFBaseDir(config)
 	if err != nil {
 		return err
 	}
@@ -97,7 +105,7 @@ func (lb *LocalBackend) postLoad(config *Configuration) error {
 	return err
 }
 
-func calculateLocalBackendDefaultDir(config *Configuration) (string, error) {
+func calculateTFBaseDir(config *Configuration) (string, error) {
 	homeDir, err := osHomeDir()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to get user home directory")
