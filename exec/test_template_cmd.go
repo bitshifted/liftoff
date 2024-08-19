@@ -6,6 +6,7 @@ package exec
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"path"
 
 	"github.com/bitshifted/liftoff/common"
@@ -34,5 +35,29 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 		OutputDir: output,
 	}
 	log.Logger.Info().Msg("Processing templates...")
-	return processor.ProcessTemplates(ec.Config)
+	err = processor.ProcessTemplates(ec.Config)
+	if err != nil {
+		return err
+	}
+	// run Terraform validattion
+	if ec.TerraformPath == "" {
+		tfCmdPath, e := exec.LookPath(defaltTerraformCmd)
+		if e != nil {
+			log.Logger.Error().Err(e).Msg("Failed to lookup Terraform path")
+			return e
+		}
+		ec.TerraformPath = tfCmdPath
+	}
+	cmdValidate := exec.Command(ec.TerraformPath, "validate") //nolint:gosec
+	cmdValidate.Stdout = os.Stdout
+	cmdValidate.Stderr = os.Stderr
+	cmdValidate.Dir = ec.TerraformWorkDir
+	log.Logger.Info().Msg("Running Terraform validate...")
+	err = cmdValidate.Run()
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Terraform validation failed")
+	} else {
+		log.Logger.Info().Msg("Terraform validation successful!")
+	}
+	return err
 }
