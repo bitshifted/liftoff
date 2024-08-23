@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/bitshifted/liftoff/common"
+	"github.com/bitshifted/liftoff/config/tfprovider"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/stretchr/testify/suite"
 )
@@ -68,4 +69,18 @@ func (ts *TerraformTestSuite) TestBackendPathBothRepoDirSet() {
 	finalPath, err := calculateTFBaseDir(&conf)
 	ts.NoError(err)
 	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "github.com", "my", "repo.git", "some", "dir"), finalPath)
+}
+
+func (ts *TerraformTestSuite) HasProviderReturnsCorrectValue() {
+	conf := Configuration{
+		Terraform: &Terraform{
+			Providers: &tfprovider.TerraformProviders{
+				HetznerDNS: &tfprovider.ProviderHetznerDNS{},
+			},
+		},
+	}
+	hasProvider := conf.Terraform.HasProvider("hetznerdns")
+	ts.True(hasProvider)
+	hasProvider = conf.Terraform.HasProvider("hcloud")
+	ts.False(hasProvider)
 }

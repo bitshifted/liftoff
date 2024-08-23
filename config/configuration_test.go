@@ -27,23 +27,42 @@ func TestLoadConfigShouldPass(t *testing.T) {
 	assert.Equal(t, "myplaybook.yaml", config.Ansible.PlaybookFile)
 	// verify variables
 	assert.NotNil(t, config.Variables)
-	textvar, ok := config.Variables["textvar"]
+	// hcloud variables
+	hcloudvars, ok := config.Variables["hcloud"]
+	assert.True(t, ok)
+	textvar, ok := hcloudvars["textvar"]
 	assert.True(t, ok)
 	assert.NotNil(t, textvar)
 	assert.Equal(t, "some text", textvar)
-	intvar, ok := config.Variables["intvar"]
+	intvar, ok := hcloudvars["intvar"]
 	assert.True(t, ok)
 	assert.NotNil(t, intvar)
 	assert.Equal(t, 123, intvar)
-	boolvar, ok := config.Variables["boolvar"]
+	boolvar, ok := hcloudvars["boolvar"]
 	assert.True(t, ok)
 	assert.NotNil(t, boolvar)
 	assert.Equal(t, true, boolvar)
-	complexvar, ok := config.Variables["complexvar"]
+	// hetznerdns vars
+	hdns, ok := config.Variables["hetznerdns"]
+	assert.True(t, ok)
+	complexvar, ok := hdns["complexvar"]
 	assert.True(t, ok)
 	assert.NotNil(t, complexvar)
 	assert.Equal(t, "string property", complexvar.(map[string]interface{})["stringprop"])
 	assert.Equal(t, 3.14, complexvar.(map[string]interface{})["floatprop"])
+	// digitalocean vars
+	dovars, ok := config.Variables["digitalocean"]
+	assert.True(t, ok)
+	listvar, ok := dovars["listvar"]
+	assert.True(t, ok)
+	assert.NotNil(t, listvar)
+	data, ok := listvar.([]interface{})
+	assert.True(t, ok)
+	assert.Equal(t, 2, len(data))
+	item := data[0].(map[string]interface{})
+	assert.NotNil(t, item)
+	assert.Equal(t, "item1", item["name"])
+	assert.Equal(t, "bar-item-1", item["foo"])
 }
 
 func TestShouldErrorForInvalidBackendType(t *testing.T) {

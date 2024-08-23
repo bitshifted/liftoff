@@ -33,6 +33,19 @@ type Terraform struct {
 	DataDir   string
 }
 
+func (t *Terraform) HasProvider(name string) bool {
+	if name == "hcloud" && t.Providers.Hcloud != nil {
+		return true
+	}
+	if name == "hetznerdns" && t.Providers.HetznerDNS != nil {
+		return true
+	}
+	if name == "digitalocean" {
+		return true
+	}
+	return false
+}
+
 func (t *Terraform) postLoad(config *Configuration) error {
 	dataDir, err := calculateTFBaseDir(config)
 	log.Logger.Debug().Msgf("Terraform data directory: %s", dataDir)
