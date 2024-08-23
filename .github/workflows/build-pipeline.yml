@@ -36,10 +36,15 @@ jobs:
           echo "VERSION=${{ steps.calculate-version.outputs.version-string }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_ID=$(echo $GITHUB_SHA)" >> $GITHUB_ENV
       - name: Build
+        if: ${{ github.event_name != 'push' }}
+        run: |
+          make build
+      - name: Package
+        if: ${{ github.event_name == 'push' }}
         run: |
           echo "VERSION: $VERSION"
           echo "GIT_COMMIT_ID: $GIT_COMMIT_ID"
-          make build
+          make package
       - name: Upload binary
         if: ${{ github.event_name == 'push' }}
         uses: actions/upload-artifact@v3
