@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/bitshifted/liftoff/common"
-	"github.com/bitshifted/liftoff/config/tfprovider"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/stretchr/testify/suite"
 )
@@ -74,13 +73,19 @@ func (ts *TerraformTestSuite) TestBackendPathBothRepoDirSet() {
 func (ts *TerraformTestSuite) HasProviderReturnsCorrectValue() {
 	conf := Configuration{
 		Terraform: &Terraform{
-			Providers: &tfprovider.TerraformProviders{
-				HetznerDNS: &tfprovider.ProviderHetznerDNS{},
-			},
+			Providers: []string{"hcloud", "hetznerdns"},
 		},
 	}
 	hasProvider := conf.Terraform.HasProvider("hetznerdns")
 	ts.True(hasProvider)
 	hasProvider = conf.Terraform.HasProvider("hcloud")
 	ts.False(hasProvider)
+}
+
+func (ts *TerraformTestSuite) ShouldFailOnUnsupportedProvider() {
+	tf := Terraform{
+		Providers: []string{providerHcloud, providerHetznerdns, "foo"},
+	}
+	err := tf.checkSupportedProviders()
+	ts.Error(err)
 }

@@ -3,7 +3,7 @@ terraform:
   backend:
     type: local
   providers:
-    hcloud:
+    - hcloud
 
 ansible:
   inventory-file: 'my-inventory'
