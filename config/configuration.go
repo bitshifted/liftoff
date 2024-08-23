@@ -11,12 +11,12 @@ import (
 )
 
 type Configuration struct {
-	TemplateRepo   string                 `yaml:"template-repo,omitempty"`
-	TempateVersion string                 `yaml:"template-version,omitempty"`
-	TemplateDir    string                 `yaml:"template-dir,omitempty"`
-	Terraform      *Terraform             `yaml:"terraform,omitempty"`
-	Ansible        *AnsibleConfig         `yaml:"ansible,omitempty"`
-	Variables      map[string]interface{} `yaml:"variables"`
+	TemplateRepo   string                            `yaml:"template-repo,omitempty"`
+	TempateVersion string                            `yaml:"template-version,omitempty"`
+	TemplateDir    string                            `yaml:"template-dir,omitempty"`
+	Terraform      *Terraform                        `yaml:"terraform,omitempty"`
+	Ansible        *AnsibleConfig                    `yaml:"ansible,omitempty"`
+	Variables      map[string]map[string]interface{} `yaml:"variables"`
 }
 
 func LoadConfig(path string) (*Configuration, error) {

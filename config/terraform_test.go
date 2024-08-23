@@ -69,3 +69,23 @@ func (ts *TerraformTestSuite) TestBackendPathBothRepoDirSet() {
 	ts.NoError(err)
 	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "github.com", "my", "repo.git", "some", "dir"), finalPath)
 }
+
+func (ts *TerraformTestSuite) HasProviderReturnsCorrectValue() {
+	conf := Configuration{
+		Terraform: &Terraform{
+			Providers: []string{"hcloud", "hetznerdns"},
+		},
+	}
+	hasProvider := conf.Terraform.HasProvider("hetznerdns")
+	ts.True(hasProvider)
+	hasProvider = conf.Terraform.HasProvider("hcloud")
+	ts.False(hasProvider)
+}
+
+func (ts *TerraformTestSuite) ShouldFailOnUnsupportedProvider() {
+	tf := Terraform{
+		Providers: []string{providerHcloud, providerHetznerdns, "foo"},
+	}
+	err := tf.checkSupportedProviders()
+	ts.Error(err)
+}

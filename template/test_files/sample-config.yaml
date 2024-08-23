@@ -3,5 +3,4 @@ terraform:
   backend:
     type: local
   providers:
-    hcloud:
-      token: "${HCLOUD_TOKEN}"
+    - hcloud

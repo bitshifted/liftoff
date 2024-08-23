@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 
 	"github.com/bitshifted/liftoff/common"
-	"github.com/bitshifted/liftoff/config/tfprovider"
 	"github.com/bitshifted/liftoff/log"
 )
 
@@ -25,12 +24,27 @@ const (
 	defaultTfStateFileName                 = "terraform.tfstate"
 	defaultTfWorkspaceDirName              = "terraform.tf.d"
 	defaultTerraformDatDirName             = ".terraform"
+	// providers
+	providerHcloud       = "hcloud"
+	providerHetznerdns   = "hetznerdns"
+	providerDigitalOcean = "digitalocean"
 )
 
+var supportedProviders = []string{providerHcloud, providerHetznerdns, providerDigitalOcean}
+
 type Terraform struct {
-	Backend   *TerraformBackend              `yaml:"backend,omitempty"`
-	Providers *tfprovider.TerraformProviders `yaml:"providers"`
+	Backend   *TerraformBackend `yaml:"backend,omitempty"`
+	Providers []string          `yaml:"providers"`
 	DataDir   string
+}
+
+func (t *Terraform) HasProvider(name string) bool {
+	for _, prov := range t.Providers {
+		if name == prov {
+			return true
+		}
+	}
+	return false
 }
 
 func (t *Terraform) postLoad(config *Configuration) error {
@@ -52,11 +66,28 @@ func (t *Terraform) postLoad(config *Configuration) error {
 			return err
 		}
 	}
-	if t.Providers == nil {
+	if len(t.Providers) == 0 {
 		return errors.New("at least one Terraform provider is required")
-	} else {
-		return t.Providers.PostLoad()
 	}
+	return t.checkSupportedProviders()
+}
+
+func (t *Terraform) checkSupportedProviders() error {
+	for _, prov := range t.Providers {
+		if !t.isSupportedProvider(prov) {
+			return fmt.Errorf("provider '%s' is not supported", prov)
+		}
+	}
+	return nil
+}
+
+func (t *Terraform) isSupportedProvider(provider string) bool {
+	for _, prov := range supportedProviders {
+		if provider == prov {
+			return true
+		}
+	}
+	return false
 }
 
 type TerraformBackend struct {
