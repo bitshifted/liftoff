@@ -36,7 +36,7 @@ RUN wget ${TF_URL} && unzip terraform_${TF_VERSION}_linux_amd64.zip && \
     rm terraform_${TF_VERSION}_linux_amd64.zip
 
 
-ARG binary_location=target/linux/liftoff
+ARG binary_location=target/linux-amd64/liftoff
 
 COPY ${binary_location} /usr/bin
 RUN chmod 755 /usr/bin/liftoff
