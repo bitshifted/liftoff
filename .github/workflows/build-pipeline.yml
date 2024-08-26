@@ -45,12 +45,18 @@ jobs:
           echo "VERSION: $VERSION"
           echo "GIT_COMMIT_ID: $GIT_COMMIT_ID"
           make package
-      - name: Upload target directory
+      - name: Upload Linux binary
         if: ${{ github.event_name == 'push' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: target-dir
-          path: target/
+          name: liftoff-binary-linux
+          path: target/linux-amd64/liftoff
+      - name: Upload release artifacts
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: target/dist
   # Docker image publishing
   publish-docker-image:
     if:  ${{ github.event_name == 'push' }}
@@ -61,10 +67,11 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-      - name: Download binary artifacts
-        uses: actions/download-artifact@v3
+      - name: Download binary artifact
+        uses: actions/download-artifact@v4
         with:
-          name: target-dir
+          name: liftoff-binary-linux
+          path: target/linux-amd64/liftoff
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Github Docker registry
@@ -99,9 +106,10 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
       - name: Download binary artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: target-dir
+          name: dist-packages
+          path: target/dist
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
