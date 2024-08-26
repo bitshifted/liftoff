@@ -45,12 +45,13 @@ jobs:
           echo "VERSION: $VERSION"
           echo "GIT_COMMIT_ID: $GIT_COMMIT_ID"
           make package
-      - name: Upload binary
+      - name: Upload target directory
         if: ${{ github.event_name == 'push' }}
         uses: actions/upload-artifact@v3
         with:
-          name: liftoff-binary
-          path: target/linux/liftoff
+          name: target-dir
+          path: target/
+  # Docker image publishing
   publish-docker-image:
     if:  ${{ github.event_name == 'push' }}
     needs: build-and-test
@@ -60,11 +61,10 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-      - name: Download binary artifact
+      - name: Download binary artifacts
         uses: actions/download-artifact@v3
         with:
-          name: liftoff-binary
-          path: target/linux/liftoff
+          name: target-dir
       - name: Setup Docker buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to Github Docker registry
@@ -88,4 +88,32 @@ jobs:
             BUILD_VERSION=${{ needs.build-and-test.outputs.version }}
             VCS_REF=${{ github.sha }}
           tags: ghcr.io/bitshifted/liftoff:${{ needs.build-and-test.outputs.version }}
-       
+  # Create release
+  create-release:
+    if:  ${{ github.event_name == 'push' }}
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: target-dir
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelase: false
+          generate_release_notes: true
+          tag_name: v${{ needs.build-and-test.outputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            target/dist/liftoff-linux-amd64-${{ needs.build-and-test.outputs.version }}.tar.gz
+            target/dist/liftoff-linux-arm64-${{ needs.build-and-test.outputs.version }}.tar.gz
+            target/dist/liftoff-mac-amd64-${{ needs.build-and-test.outputs.version }}.tar.gz
+            target/dist/liftoff-mac-arm64-${{ needs.build-and-test.outputs.version }}.tar.gz
+            target/dist/liftoff-windows-amd64-${{ needs.build-and-test.outputs.version }}.zip
+            target/dist/liftoff-windows-arm64-${{ needs.build-and-test.outputs.version }}.zip
