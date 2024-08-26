@@ -121,7 +121,7 @@ jobs:
           files: |
             target/dist/liftoff-linux-amd64-${{ needs.build-and-test.outputs.version }}.tar.gz
             target/dist/liftoff-linux-arm64-${{ needs.build-and-test.outputs.version }}.tar.gz
-            target/dist/liftoff-mac-amd64-${{ needs.build-and-test.outputs.version }}.tar.gz
-            target/dist/liftoff-mac-arm64-${{ needs.build-and-test.outputs.version }}.tar.gz
+            target/dist/liftoff-macos-amd64-${{ needs.build-and-test.outputs.version }}.tar.gz
+            target/dist/liftoff-macos-arm64-${{ needs.build-and-test.outputs.version }}.tar.gz
             target/dist/liftoff-windows-amd64-${{ needs.build-and-test.outputs.version }}.zip
             target/dist/liftoff-windows-arm64-${{ needs.build-and-test.outputs.version }}.zip
