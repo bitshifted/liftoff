@@ -63,29 +63,37 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 		}
 		ec.TerraformPath = tfCmdPath
 	}
-	cmdInit := exec.Command(ec.TerraformPath, "init") //nolint:gosec
-	cmdInit.Stdout = os.Stdout
-	cmdInit.Stderr = os.Stderr
-	cmdInit.Dir = ec.TerraformWorkDir
-	cmdInit.Env = append(cmdInit.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
-	log.Logger.Debug().Msgf("Terraform work directory: %s", cmdInit.Dir)
 	log.Logger.Info().Msg("Running Terraform init...")
-	err = cmdInit.Run()
+	err = ec.executeTerraformCommand("init")
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform init")
 		return err
 	}
-	cmdValidate := exec.Command(ec.TerraformPath, "validate") //nolint:gosec
-	cmdValidate.Stdout = os.Stdout
-	cmdValidate.Stderr = os.Stderr
-	cmdValidate.Dir = ec.TerraformWorkDir
-	cmdValidate.Env = append(cmdValidate.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
 	log.Logger.Info().Msg("Running Terraform validate...")
-	err = cmdValidate.Run()
+	err = ec.executeTerraformCommand("validate")
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Terraform validation failed")
+		return err
+	}
+	// run Terraform plan
+	log.Logger.Info().Msg("Running Terraform plan...")
+	err = ec.executeTerraformCommand("plan")
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Terraform plan failed")
 	} else {
 		log.Logger.Info().Msg("Terraform validation successful!")
 	}
 	return err
+}
+
+func (ec *ExecutionConfig) executeTerraformCommand(cmd string) error {
+	command := exec.Command(ec.TerraformPath, cmd) //nolint:gosec
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
+	command.Dir = ec.TerraformWorkDir
+	log.Logger.Debug().Msgf("Terraform work directory: %s", command.Dir)
+	command.Env = append(command.Env, os.Environ()...)
+	command.Env = append(command.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
+	log.Logger.Debug().Msgf("Command environment: %v", command.Env)
+	return command.Run()
 }
