@@ -52,7 +52,7 @@ func (ts *TerraformTestSuite) TestLocalBackendWhenOnlyDirectorySet() {
 	}
 	finalPath, err := calculateTFBaseDir(&conf)
 	ts.NoError(err)
-	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "some", "dir", "path"), finalPath)
+	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "some", "dir", "path", defaultTerraformDatDirName), finalPath)
 }
 
 func (ts *TerraformTestSuite) TestBackendPathBothRepoDirSet() {
@@ -67,7 +67,8 @@ func (ts *TerraformTestSuite) TestBackendPathBothRepoDirSet() {
 	}
 	finalPath, err := calculateTFBaseDir(&conf)
 	ts.NoError(err)
-	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "github.com", "my", "repo.git", "some", "dir"), finalPath)
+	ts.Equal(path.Join(tmpDir, common.DefaultHomeDirName, "github.com", "my", "repo.git", "some", "dir", defaultTerraformDatDirName),
+		finalPath)
 }
 
 func (ts *TerraformTestSuite) HasProviderReturnsCorrectValue() {

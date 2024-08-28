@@ -5,6 +5,7 @@ package config
 
 import (
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ func TestLoadConfigShouldPass(t *testing.T) {
 	localPath, err := calculateTFBaseDir(config)
 	assert.NoError(t, err)
 
-	assert.Equal(t, path.Join(localPath, defaultTfStateFileName), config.Terraform.Backend.Local.Path)
+	assert.Equal(t, path.Join(filepath.Dir(localPath), defaultTfStateFileName), config.Terraform.Backend.Local.Path)
 	assert.Equal(t, path.Join(localPath, defaultTfWorkspaceDirName), config.Terraform.Backend.Local.Workspace)
 	// ansible config
 	assert.NotNil(t, config.Ansible)

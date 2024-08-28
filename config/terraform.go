@@ -122,7 +122,7 @@ func (lb *LocalBackend) postLoad(config *Configuration) error {
 		return err
 	}
 	if lb.Path == "" {
-		lb.Path = path.Join(defaultDir, defaultTfStateFileName)
+		lb.Path = path.Join(filepath.Dir(defaultDir), defaultTfStateFileName)
 		// create required directories
 		log.Logger.Debug().Msgf("Creating required directories for local backend: %s", filepath.Dir(lb.Path))
 		err = os.MkdirAll(filepath.Dir(lb.Path), os.ModePerm)
@@ -152,7 +152,7 @@ func calculateTFBaseDir(config *Configuration) (string, error) {
 		curPath = path.Join(curPath, templateURL.Host, templateURL.Path)
 	}
 	if config.TemplateDir != "" {
-		curPath = path.Join(curPath, config.TemplateDir)
+		curPath = path.Join(curPath, config.TemplateDir, defaultTerraformDatDirName)
 	}
 
 	return path.Join(curPath), nil
