@@ -83,26 +83,14 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 
 func (ec *ExecutionConfig) executeTerraform() error {
 	// TODO copy .terraform.hcl.lock if exists in workspace
-	cmdInit := osExec.Command(ec.TerraformPath, "init") //nolint:gosec
-	cmdInit.Stdout = os.Stdout
-	cmdInit.Stderr = os.Stderr
-	cmdInit.Dir = ec.TerraformWorkDir
-	cmdInit.Env = append(cmdInit.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
-	log.Logger.Debug().Msgf("Terraform work directory: %s", cmdInit.Dir)
 	log.Logger.Info().Msg("Running Terraform init...")
-	err := cmdInit.Run()
+	err := ec.executeTerraformCommand("init")
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform init")
 		return err
 	}
 	log.Logger.Info().Msg("Running Terraform apply")
-	cmdApply := osExec.Command(ec.TerraformPath, "apply", "-auto-approve") //nolint:gosec
-	cmdApply.Stdout = os.Stdout
-	cmdApply.Stderr = os.Stderr
-	cmdApply.Dir = ec.TerraformWorkDir
-	cmdApply.Env = os.Environ()
-	cmdApply.Env = append(cmdApply.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
-	err = cmdApply.Run()
+	err = ec.executeTerraformCommand("apply", "-auto-approve")
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform apply")
 	}
