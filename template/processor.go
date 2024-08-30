@@ -21,10 +21,11 @@ const (
 )
 
 type TemplateProcessor struct {
-	BaseDir      string
-	OutputDir    string
-	TerraformDir string
-	AnsibleDir   string
+	BaseDir        string
+	OutputDir      string
+	TerraformDir   string
+	AnsibleDir     string
+	generatedFiles []string
 }
 
 func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error {
@@ -46,6 +47,10 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 		log.Logger.Error().Err(err).Msg("Failed to process Terraform templates")
 		return err
 	}
+	err = tp.cleanupGeneratedFiles(outputDir)
+	if err != nil {
+		log.Logger.Error().Err(err).Msgf("Failed to clean up generated file")
+	}
 	// process Ansible templates
 	if tp.AnsibleDir == "" {
 		tp.AnsibleDir = common.DefaultAnsibleDir
@@ -64,7 +69,11 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 		log.Logger.Warn().Msgf("Ansible template directory %s does not exist. Skipping", ansibleTemplateDir)
 		return nil
 	}
-	return tp.fileWalker(ansibleTemplateDir, conf)
+	err = tp.fileWalker(ansibleTemplateDir, conf)
+	if err != nil {
+		return err
+	}
+	return tp.cleanupGeneratedFiles(outputDir)
 }
 
 func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration) error {
@@ -87,6 +96,7 @@ func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.C
 		log.Logger.Error().Err(err).Msg("Failed to create output template file")
 		return err
 	}
+	tp.generatedFiles = append(tp.generatedFiles, outFilePath)
 	return tmpl.Execute(outFile, conf)
 }
 
@@ -130,4 +140,26 @@ func (tp *TemplateProcessor) calculateOutputDirectory(dirName string) string {
 		}
 	}
 	return outputDir
+}
+
+func (tp *TemplateProcessor) cleanupGeneratedFiles(baseDir string) error {
+	log.Logger.Debug().Msgf("Cleaning up files in %s", baseDir)
+	return filepath.Walk(baseDir, func(fpath string, info os.FileInfo, err error) error {
+		log.Logger.Debug().Msgf("Checking path %s", fpath)
+		toDelete := true
+		for _, curFile := range tp.generatedFiles {
+			if curFile == fpath {
+				toDelete = false
+				break
+			}
+		}
+		if toDelete {
+			log.Logger.Info().Msgf("Deleting redundant file %s", fpath)
+			derr := os.Remove(fpath)
+			if err != nil {
+				log.Logger.Error().Err(derr).Msgf("Failed to delete file %s", fpath)
+			}
+		}
+		return nil
+	})
 }
