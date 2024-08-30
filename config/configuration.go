@@ -17,6 +17,7 @@ type Configuration struct {
 	Terraform      *Terraform                        `yaml:"terraform,omitempty"`
 	Ansible        *AnsibleConfig                    `yaml:"ansible,omitempty"`
 	Variables      map[string]map[string]interface{} `yaml:"variables"`
+	Tags           map[string]string                 `yaml:"tags"`
 }
 
 func LoadConfig(path string) (*Configuration, error) {

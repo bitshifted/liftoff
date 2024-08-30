@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+//nolint:funlen
 func TestLoadConfigShouldPass(t *testing.T) {
 	config, err := LoadConfig("./test_files/simple-config.yaml")
 	assert.NoError(t, err)
@@ -64,6 +65,12 @@ func TestLoadConfigShouldPass(t *testing.T) {
 	assert.NotNil(t, item)
 	assert.Equal(t, "item1", item["name"])
 	assert.Equal(t, "bar-item-1", item["foo"])
+	// validate tags
+	tags := config.Tags
+	assert.NotNil(t, tags)
+	assert.Equal(t, 2, len(tags))
+	assert.Equal(t, "foovalue", tags["foo"])
+	assert.Equal(t, "barvalue", tags["bar"])
 }
 
 func TestShouldErrorForInvalidBackendType(t *testing.T) {
