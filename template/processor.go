@@ -55,10 +55,6 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to write generated file paths")
 	}
-	// err = tp.cleanupGeneratedFiles(outputDir)
-	// if err != nil {
-	// 	log.Logger.Error().Err(err).Msgf("Failed to clean up generated file")
-	// }
 	// process Ansible templates
 	if tp.AnsibleDir == "" {
 		tp.AnsibleDir = common.DefaultAnsibleDir
