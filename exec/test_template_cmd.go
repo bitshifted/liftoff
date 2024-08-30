@@ -39,7 +39,7 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 		return errors.New("either template repository or template directory must be specified")
 	}
 	log.Logger.Info().Msgf("Template directory: %s", tmplDir)
-	output, err := os.MkdirTemp("", tmpDirPrefix)
+	output, err := ec.calculateOutputDirectory()
 	if err != nil {
 		return err
 	}
