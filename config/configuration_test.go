@@ -4,25 +4,18 @@
 package config
 
 import (
-	"path"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-//nolint:funlen
 func TestLoadConfigShouldPass(t *testing.T) {
 	config, err := LoadConfig("./test_files/simple-config.yaml")
 	assert.NoError(t, err)
 	assert.NotNil(t, config.Terraform)
 	assert.NotNil(t, config.Terraform.Backend)
 	assert.Equal(t, Local, config.Terraform.Backend.Type)
-	localPath, err := calculateTFBaseDir(config)
-	assert.NoError(t, err)
 
-	assert.Equal(t, path.Join(filepath.Dir(localPath), defaultTfStateFileName), config.Terraform.Backend.Local.Path)
-	assert.Equal(t, path.Join(localPath, defaultTfWorkspaceDirName), config.Terraform.Backend.Local.Workspace)
 	// ansible config
 	assert.NotNil(t, config.Ansible)
 	assert.Equal(t, "my-inventory", config.Ansible.InventoryFile)

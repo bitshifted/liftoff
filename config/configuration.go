@@ -40,5 +40,5 @@ func LoadConfig(path string) (*Configuration, error) {
 }
 
 func (c *Configuration) postLoad() error {
-	return c.Terraform.postLoad(c)
+	return c.Terraform.postLoad()
 }

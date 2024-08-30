@@ -17,10 +17,6 @@ import (
 	"github.com/bitshifted/liftoff/template"
 )
 
-const (
-	tmpDirPrefix = "liftoff_setup"
-)
-
 func (ec *ExecutionConfig) ExecuteSetup() error {
 	repo := ec.Config.TemplateRepo
 	if repo == "" {
@@ -31,7 +27,7 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 		return errors.New("either template repository or template directory must be specified")
 	}
 	log.Logger.Info().Msgf("Template directory: %s", tmplDir)
-	output, err := os.MkdirTemp("", tmpDirPrefix)
+	output, err := ec.calculateOutputDirectory()
 	if err != nil {
 		return err
 	}
@@ -102,7 +98,6 @@ func (ec *ExecutionConfig) getTerraformOutputs() (map[string]interface{}, error)
 	log.Logger.Info().Msg("Collecting Terraform outputs")
 	cmdOut := osExec.Command(ec.TerraformPath, "output", "-json") //nolint:gosec
 	cmdOut.Dir = ec.TerraformWorkDir
-	cmdOut.Env = append(cmdOut.Env, "TF_DATA_DIR="+ec.Config.Terraform.DataDir)
 	r, w, err := os.Pipe()
 	defer w.Close()
 	if err != nil {
