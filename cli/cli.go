@@ -70,7 +70,23 @@ func (s *SetupCmd) Run(ctx *kong.Context) error {
 
 func (t *TearDownCmd) Run(ctx *kong.Context) error {
 	log.Logger.Info().Msg("Executing teardown...")
-	return nil
+	configFile := extractArgumentValue(ctx.Args, configFileArg, 1, common.DefaultConfigFileName)
+	conf, err := config.LoadConfig(configFile)
+	if err != nil {
+		return err
+	}
+	configFileAbsPath, err := filepath.Abs(configFile)
+	if err != nil {
+		return err
+	}
+	log.Logger.Info().Msgf("Reading configuration file %s", configFileAbsPath)
+	executionConfig := exec.ExecutionConfig{
+		Config:              conf,
+		ConfigFilePath:      configFileAbsPath,
+		TerraformPath:       extractArgumentValue(ctx.Args, terraformPathArg, 1, ""),
+		AnsiblePlaybookPath: extractArgumentValue(ctx.Args, ansiblePlaybookPathArg, 1, ""),
+	}
+	return executionConfig.ExecuteTeardown()
 }
 
 func (vc *VersionCmd) Run(ctx *kong.Context) error {
