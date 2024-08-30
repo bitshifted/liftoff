@@ -23,3 +23,6 @@ variables:
         foo: bar-item-1
       - name: item2
         foo: bar-item-2
+tags:
+  foo: foovalue
+  bar: barvalue
