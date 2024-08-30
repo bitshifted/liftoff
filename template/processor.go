@@ -4,7 +4,9 @@
 package template
 
 import (
+	"bufio"
 	"errors"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -17,7 +19,9 @@ import (
 )
 
 const (
-	templateSuffix = ".tmpl"
+	templateSuffix     = ".tmpl"
+	generatedFilesName = ".genfiles"
+	fileMode           = 0644
 )
 
 type TemplateProcessor struct {
@@ -47,10 +51,14 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 		log.Logger.Error().Err(err).Msg("Failed to process Terraform templates")
 		return err
 	}
-	err = tp.cleanupGeneratedFiles(outputDir)
+	err = tp.writeGeneratedFilePaths(outputDir)
 	if err != nil {
-		log.Logger.Error().Err(err).Msgf("Failed to clean up generated file")
+		log.Logger.Error().Err(err).Msg("Failed to write generated file paths")
 	}
+	// err = tp.cleanupGeneratedFiles(outputDir)
+	// if err != nil {
+	// 	log.Logger.Error().Err(err).Msgf("Failed to clean up generated file")
+	// }
 	// process Ansible templates
 	if tp.AnsibleDir == "" {
 		tp.AnsibleDir = common.DefaultAnsibleDir
@@ -69,11 +77,16 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 		log.Logger.Warn().Msgf("Ansible template directory %s does not exist. Skipping", ansibleTemplateDir)
 		return nil
 	}
+	tp.generatedFiles = []string{}
 	err = tp.fileWalker(ansibleTemplateDir, conf)
 	if err != nil {
 		return err
 	}
-	return tp.cleanupGeneratedFiles(outputDir)
+	err = tp.writeGeneratedFilePaths(outputDir)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to write generated file paths")
+	}
+	return err
 }
 
 func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration) error {
@@ -144,22 +157,51 @@ func (tp *TemplateProcessor) calculateOutputDirectory(dirName string) string {
 
 func (tp *TemplateProcessor) cleanupGeneratedFiles(baseDir string) error {
 	log.Logger.Debug().Msgf("Cleaning up files in %s", baseDir)
-	return filepath.Walk(baseDir, func(fpath string, info os.FileInfo, err error) error {
-		log.Logger.Debug().Msgf("Checking path %s", fpath)
+	inFile, err := os.OpenFile(path.Join(baseDir, generatedFilesName), os.O_RDONLY, fileMode)
+	if err != nil {
+		log.Logger.Warn().Err(err).Msg("Failed to open .genfiles for reading")
+		return err
+	}
+	defer inFile.Close()
+	scanner := bufio.NewScanner(inFile)
+	for scanner.Scan() {
 		toDelete := true
+		scanned := scanner.Text()
 		for _, curFile := range tp.generatedFiles {
-			if curFile == fpath {
+			if curFile == scanned {
 				toDelete = false
 				break
 			}
 		}
 		if toDelete {
-			log.Logger.Info().Msgf("Deleting redundant file %s", fpath)
-			derr := os.Remove(fpath)
+			log.Logger.Info().Msgf("Deleting redundant file %s", scanned)
+			derr := os.Remove(scanned)
 			if err != nil {
-				log.Logger.Error().Err(derr).Msgf("Failed to delete file %s", fpath)
+				log.Logger.Error().Err(derr).Msgf("Failed to delete file %s", scanned)
 			}
 		}
-		return nil
-	})
+	}
+	return nil
+}
+
+func (tp *TemplateProcessor) writeGeneratedFilePaths(baseDir string) error {
+	err := tp.cleanupGeneratedFiles(baseDir)
+	if err != nil {
+		log.Logger.Warn().Err(err).Msg("Error cleaning generated files")
+	}
+	outFile, err := os.OpenFile(path.Join(baseDir, generatedFilesName), os.O_RDWR|os.O_CREATE|os.O_TRUNC, fileMode)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to open file for writing")
+		return err
+	}
+	defer outFile.Close()
+	writer := bufio.NewWriter(outFile)
+	for _, fpath := range tp.generatedFiles {
+		txt := fmt.Sprintf("%s\n", fpath)
+		_, err = writer.WriteString(txt)
+		if err != nil {
+			log.Logger.Warn().Msgf("Could not write generated file path: %s", fpath)
+		}
+	}
+	return writer.Flush()
 }

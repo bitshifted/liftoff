@@ -78,7 +78,6 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 }
 
 func (ec *ExecutionConfig) executeTerraform() error {
-	// TODO copy .terraform.hcl.lock if exists in workspace
 	log.Logger.Info().Msg("Running Terraform init...")
 	err := ec.executeTerraformCommand("init")
 	if err != nil {
