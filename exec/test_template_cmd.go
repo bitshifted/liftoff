@@ -49,8 +49,8 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 		BaseDir:   tmplDir,
 		OutputDir: output,
 	}
-	log.Logger.Info().Msg("Processing templates...")
-	err = processor.ProcessTemplates(ec.Config)
+	log.Logger.Info().Msg("Processing Terraform templates...")
+	err = processor.ProcessTerraformTemplates(ec.Config)
 	if err != nil {
 		return err
 	}
@@ -82,6 +82,10 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 		log.Logger.Error().Err(err).Msg("Terraform plan failed")
 	} else {
 		log.Logger.Info().Msg("Terraform validation successful!")
+	}
+	err = processor.ProcessAnsibleTemplates(ec.Config)
+	if err != nil {
+		return err
 	}
 	return err
 }

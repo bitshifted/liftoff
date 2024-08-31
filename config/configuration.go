@@ -11,13 +11,14 @@ import (
 )
 
 type Configuration struct {
-	TemplateRepo   string                            `yaml:"template-repo,omitempty"`
-	TempateVersion string                            `yaml:"template-version,omitempty"`
-	TemplateDir    string                            `yaml:"template-dir,omitempty"`
-	Terraform      *Terraform                        `yaml:"terraform,omitempty"`
-	Ansible        *AnsibleConfig                    `yaml:"ansible,omitempty"`
-	Variables      map[string]map[string]interface{} `yaml:"variables"`
-	Tags           map[string]string                 `yaml:"tags"`
+	TemplateRepo   string            `yaml:"template-repo,omitempty"`
+	TempateVersion string            `yaml:"template-version,omitempty"`
+	TemplateDir    string            `yaml:"template-dir,omitempty"`
+	Terraform      *Terraform        `yaml:"terraform,omitempty"`
+	Ansible        *AnsibleConfig    `yaml:"ansible,omitempty"`
+	Variables      ConfigVariables   `yaml:"variables"`
+	Tags           map[string]string `yaml:"tags"`
+	ProcessingVars map[string]interface{}
 }
 
 func LoadConfig(path string) (*Configuration, error) {
@@ -40,5 +41,6 @@ func LoadConfig(path string) (*Configuration, error) {
 }
 
 func (c *Configuration) postLoad() error {
+	c.ProcessingVars = c.Variables.forEnvironment()
 	return c.Terraform.postLoad()
 }

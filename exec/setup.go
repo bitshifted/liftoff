@@ -37,12 +37,12 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 		BaseDir:   tmplDir,
 		OutputDir: output,
 	}
-	log.Logger.Info().Msg("Processing templates...")
-	err = processor.ProcessTemplates(ec.Config)
+	log.Logger.Info().Msg("Processing Terraform templates...")
+	err = processor.ProcessTerraformTemplates(ec.Config)
 	if err != nil {
 		return err
 	}
-	var tfOutput map[string]interface{}
+	var tfOutputs map[string]interface{}
 	if ec.TerraformPath == "" {
 		tfCmdPath, e := osExec.LookPath(defaltTerraformCmd)
 		if e != nil {
@@ -60,15 +60,24 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 	} else {
 		log.Logger.Info().Msg("Skipping Terraform configuration")
 	}
-	tfOutput, err = ec.getTerraformOutputs()
+	tfOutputs, err = ec.getTerraformOutputs()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to get Terraform outputs")
 		return err
 	}
+	// add TF  outputs to variables
+	for k, v := range tfOutputs {
+		// extract values of TF output variables
+		ec.Config.ProcessingVars[k] = v.(map[string]interface{})["value"]
+	}
+	log.Logger.Debug().Msgf("Terraform output: %v", tfOutputs)
 
 	if !ec.SkipAnsible {
 		log.Logger.Info().Msg("Processing Ansible configuration...")
-		log.Logger.Debug().Msgf("Terraform output: %v", tfOutput)
+		err = processor.ProcessAnsibleTemplates(ec.Config)
+		if err != nil {
+			return err
+		}
 		return ec.executeAnsiblePlaybook()
 	} else {
 		log.Logger.Info().Msg("Skipping Ansible configuration")
@@ -97,34 +106,37 @@ func (ec *ExecutionConfig) getTerraformOutputs() (map[string]interface{}, error)
 	log.Logger.Info().Msg("Collecting Terraform outputs")
 	cmdOut := osExec.Command(ec.TerraformPath, "output", "-json") //nolint:gosec
 	cmdOut.Dir = ec.TerraformWorkDir
+	cmdOut.Stderr = os.Stderr
 	r, w, err := os.Pipe()
-	defer w.Close()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to create pipe")
 		return nil, err
 	}
-	cmdOut.Stdout = r
+	cmdOut.Stdout = w
 	err = cmdOut.Run()
+	// r.Close()
+	w.Close()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run Terraform output")
 		return nil, nil
 	}
 	var buf bytes.Buffer
+	numBytes, err := io.Copy(&buf, r)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to read TF output")
+		return nil, err
+	}
 	var outputs map[string]interface{}
-	if buf.Len() == 0 {
+	if numBytes == 0 {
+		log.Logger.Debug().Msg("output is empty")
 		outputs = make(map[string]interface{})
 	} else {
-		_, err = io.Copy(&buf, r)
-		if err != nil {
-			return nil, err
-		}
 		err = json.Unmarshal(buf.Bytes(), &outputs)
 		if err != nil {
 			log.Logger.Error().Err(err).Msg("Failed to unmarshal Terraform output")
 			return nil, err
 		}
 	}
-
 	return outputs, nil
 }
 
@@ -135,7 +147,7 @@ func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
 			log.Logger.Error().Err(err).Msg("Failed to lookup ansible-playbook path")
 			return err
 		}
-		ec.TerraformPath = ansibleCmdPath
+		ec.AnsiblePlaybookPath = ansibleCmdPath
 	}
 	if ec.Config.Ansible == nil || ec.Config.Ansible.InventoryFile == "" || ec.Config.Ansible.PlaybookFile == "" {
 		log.Logger.Warn().Msg("Either Ansible inventory file or playbook were not specified. Aborting.")
@@ -147,6 +159,7 @@ func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
 	cmdApply.Stdout = os.Stdout
 	cmdApply.Stderr = os.Stderr
 	cmdApply.Dir = ec.AnsibleWorkDir
+	cmdApply.Env = append(cmdApply.Env, os.Environ()...)
 	err := cmdApply.Run()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run ansible-playbook")
