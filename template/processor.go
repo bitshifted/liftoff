@@ -32,8 +32,7 @@ type TemplateProcessor struct {
 	generatedFiles []string
 }
 
-func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error {
-	// process Terraform templates
+func (tp *TemplateProcessor) ProcessTerraformTemplates(conf *config.Configuration) error {
 	if tp.TerraformDir == "" {
 		tp.TerraformDir = common.DefaultTerraformDir
 	}
@@ -55,15 +54,18 @@ func (tp *TemplateProcessor) ProcessTemplates(conf *config.Configuration) error 
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to write generated file paths")
 	}
-	// process Ansible templates
+	return err
+}
+
+func (tp *TemplateProcessor) ProcessAnsibleTemplates(conf *config.Configuration) error {
 	if tp.AnsibleDir == "" {
 		tp.AnsibleDir = common.DefaultAnsibleDir
 	}
 	ansibleTemplateDir := path.Join(tp.BaseDir, tp.AnsibleDir)
 	log.Logger.Debug().Msgf("Ansible template directory: %s", ansibleTemplateDir)
-	outputDir = tp.calculateOutputDirectory(common.DefaultAnsibleDir)
+	outputDir := tp.calculateOutputDirectory(common.DefaultAnsibleDir)
 	log.Logger.Info().Msgf("Ansible output directory: %s", outputDir)
-	err = os.MkdirAll(outputDir, os.ModePerm)
+	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to create output directory")
 		return err
