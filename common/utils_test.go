@@ -38,36 +38,30 @@ func (ts *UtilsTestSuite) TestEnvVarIsSetReturnsCorrectValue() {
 }
 
 func (ts *UtilsTestSuite) TestShouldReturnEnvVarTypeForString() {
-	valueType := ValueTypeFromString("$FOO")
+	valueType := ValueTypeFromString("fromenv:FOO")
 	ts.Equal(EnvVariableString, valueType)
-	valueType = ValueTypeFromString("${BAR}")
+	valueType = ValueTypeFromString("fromenv:BAR")
 	ts.Equal(EnvVariableString, valueType)
-	valueType = ValueTypeFromString("$my_var123")
+	valueType = ValueTypeFromString("fromenv:my_var123")
 	ts.Equal(EnvVariableString, valueType)
-	valueType = ValueTypeFromString("${INVALID_VAR")
-	ts.Equal(PlainString, valueType)
 }
 
 func (ts *UtilsTestSuite) TestShouldReturnFileContentType() {
-	valueType := ValueTypeFromString("filecontent:/path/to/file")
+	valueType := ValueTypeFromString("fromfile:/path/to/file")
 	ts.Equal(FileContentString, valueType)
 	valueType = ValueTypeFromString("content:blah")
 	ts.Equal(PlainString, valueType)
 }
 
 func (ts *UtilsTestSuite) TestShouldReturnCorrectEnvVarName() {
-	name, err := ExtractEnvVarName("${FOO_VAR}")
-	ts.NoError(err)
+	name := ExtractEnvVarName("fromenv:FOO_VAR")
 	ts.Equal("FOO_VAR", name)
-	name, err = ExtractEnvVarName("$BAR")
-	ts.NoError(err)
+	name = ExtractEnvVarName("fromenv:BAR")
 	ts.Equal("BAR", name)
-	_, err = ExtractEnvVarName("${INVALID")
-	ts.Error(err)
 }
 
 func (ts *UtilsTestSuite) TestShouldReturnFileContentRelPath() {
-	content, err := ProcessStringValue("filecontent:test_files/sample.txt")
+	content, err := ProcessStringValue("fromfile:test_files/sample.txt")
 	ts.NoError(err)
 	ts.Equal("sample text", content)
 }
@@ -77,7 +71,7 @@ func (ts *UtilsTestSuite) TestShouldReturnFileContentAbsPath() {
 	log.Logger.Debug().Msgf("temp file path: %s", file.Name())
 	ts.NoError(err)
 	file.WriteString("sample text")
-	content, err := ProcessStringValue(fmt.Sprintf("filecontent:%s", file.Name()))
+	content, err := ProcessStringValue(fmt.Sprintf("fromfile:%s", file.Name()))
 	ts.NoError(err)
 	ts.Equal("sample text", content)
 }

@@ -4,10 +4,8 @@
 package common
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/bitshifted/liftoff/log"
@@ -16,20 +14,15 @@ import (
 type ValueType int8
 
 const (
-	envVarRegex                 = "\\$(?:(\\w+)|\\{(\\w+)\\})"
-	contentPrefix               = "filecontent:"
+	envPrefix                   = "fromenv:"
+	contentPrefix               = "fromfile:"
 	EnvVariableString ValueType = iota
 	FileContentString
 	PlainString
 )
 
 func ValueTypeFromString(input string) ValueType {
-	match, err := regexp.MatchString(envVarRegex, input)
-	if err != nil {
-		log.Logger.Error().Err(err).Msg("Failed to match regex")
-		return PlainString
-	}
-	if match {
+	if strings.HasPrefix(input, envPrefix) {
 		log.Logger.Debug().Msgf("Found environment variable setting: %s", input)
 		return EnvVariableString
 	}
@@ -46,23 +39,8 @@ func IsEnvVariableSet(envVarName string) bool {
 	return value != ""
 }
 
-func ExtractEnvVarName(input string) (string, error) {
-	match, err := regexp.MatchString(envVarRegex, input)
-	if err != nil {
-		log.Logger.Error().Err(err).Msg("Failed to match regex")
-		return "", err
-	}
-	if !match {
-		err := errors.New("invalid environment variable reference")
-		log.Logger.Error().Err(err).Msgf("Invalid environment variable reference: %s", input)
-		return "", err
-	}
-	if strings.HasPrefix(input, "${") && strings.HasSuffix(input, "}") {
-		return input[2 : len(input)-1], nil
-	} else if strings.HasPrefix(input, "$") {
-		return input[1:], nil
-	}
-	return "", errors.New("failed to extract variable name")
+func ExtractEnvVarName(input string) string {
+	return strings.Replace(input, envPrefix, "", 1)
 }
 
 func ProcessStringValue(input string) (string, error) {
@@ -70,26 +48,32 @@ func ProcessStringValue(input string) (string, error) {
 	switch valueType {
 	case EnvVariableString:
 		// extract variable name and check if it is set
-		varName, err := ExtractEnvVarName(input)
-		if err != nil {
-			return "", err
-		}
+		varName := ExtractEnvVarName(input)
 		if !IsEnvVariableSet(varName) {
 			err := fmt.Errorf("referenced environment variable %s is not set", varName)
 			log.Logger.Error().Err(err).Msg("Environment variable is not set")
 			return "", err
 		} else {
-			return "", nil
+			return osGetEnv(varName), nil
 		}
 	case FileContentString:
 		// strip prefix
 		path := input[len(contentPrefix):]
+		// adjust path for home directory
+		if strings.HasPrefix(path, "~") {
+			homeDirPath, err := os.UserHomeDir()
+			if err != nil {
+				return "", err
+			}
+			log.Logger.Debug().Msgf("Home directory: %s", homeDirPath)
+			path = strings.Replace(path, "~", homeDirPath, 1)
+		}
 		// read file content into string
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return "", err
 		}
-		return string(data), nil
+		return strings.TrimSpace(string(data)), nil
 	}
 	return input, nil
 }

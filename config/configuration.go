@@ -42,5 +42,9 @@ func LoadConfig(path string) (*Configuration, error) {
 
 func (c *Configuration) postLoad() error {
 	c.ProcessingVars = c.Variables.forEnvironment()
+	err := processVariables(c.ProcessingVars)
+	if err != nil {
+		return err
+	}
 	return c.Terraform.postLoad()
 }
