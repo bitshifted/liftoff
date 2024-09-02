@@ -80,6 +80,7 @@ func (ec *ExecutionConfig) ExecuteTestTemplate() error {
 	err = ec.executeTerraformCommand("plan")
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Terraform plan failed")
+		return err
 	} else {
 		log.Logger.Info().Msg("Terraform validation successful!")
 	}
