@@ -155,7 +155,7 @@ func (tp *TemplateProcessor) calculateOutputDirectory(dirName string) string {
 
 func (tp *TemplateProcessor) cleanupGeneratedFiles(baseDir string) error {
 	log.Logger.Debug().Msgf("Cleaning up files in %s", baseDir)
-	inFile, err := os.OpenFile(path.Join(baseDir, generatedFilesName), os.O_RDONLY, fileMode)
+	inFile, err := os.OpenFile(path.Join(baseDir, generatedFilesName), os.O_RDONLY|os.O_CREATE, fileMode)
 	if err != nil {
 		log.Logger.Warn().Err(err).Msg("Failed to open .genfiles for reading")
 		return err
