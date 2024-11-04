@@ -3,7 +3,7 @@ module github.com/bitshifted/liftoff
 go 1.22.5
 
 require (
-	github.com/alecthomas/kong v1.2.1
+	github.com/alecthomas/kong v1.3.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/rs/zerolog v1.33.0
 	github.com/stretchr/testify v1.9.0
