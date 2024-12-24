@@ -7,8 +7,8 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG BUILD_VERSION
 
-ENV ANSIBLE_PACKAGE_VERSION=9.9.0-1ppa~noble
-ENV TF_VERSION=1.9.4
+ENV ANSIBLE_PACKAGE_VERSION=10.7.0-1ppa~noble
+ENV TF_VERSION=1.10.3
 ENV TF_URL=https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip
 
 # Labels.
