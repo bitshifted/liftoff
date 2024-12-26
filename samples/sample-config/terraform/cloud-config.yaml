@@ -1,0 +1,27 @@
+#cloud-config
+
+ssh_pwauth: false
+
+users:
+  - default
+  - name: keycloak
+    gecos: Keycloak User
+    shell: /sbin/nologin
+    no_create_home: true
+  # Configure server to be managed by Ansible
+  - name: ansible
+    gecos: Ansible User
+    groups:
+      - user
+      - admin
+      - wheel
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCxwsSLR3lv31KKto7miuaVay4tvMvs6YTPC/ilYnQhCJMCC3wK5tiFPry/tpBnvpwTVWHlHDzVVY5b52vreEO6vy8b0vHno3omEPJWI2e3pphpEds+fcp8JkZC//QPSpM5NJGFckB4HpQO00aAFDYRrdWdgTSmv8PSZpJbCaWlWgxQZK+kZWcTSamwaWQ2r+3dJ83H0v5zG73XeJopwFPcCNjDWNxiX5LIgyDkEG+I0jS8tPai5EFH8Z/0lGPvY1/5u7Obo/D1r+VTjWYPF/iJSaFklZEUezLNlIAMTmJu/OUMy5KFh5ITJzYUw23gyI/tttZCOh2D6ubmaWjG2fPVKglOcbL/y5qAphh9+V+4eAI7BB7V8wfSgDvsAE3NO7pMqpgwfaqW0vKZeQpnOP8ZldSl7aurBp4GBwLJfsShxdVaJabnEfEr4rWL3a3jKH4ZAvxgH6RAb+dhxvC39wE7zzRIyZsrLDYdrQSpn350OpyTxX1nzdDmnXJzGGw3EDoBR998d/Sh0XUVzg3hQChFvVtHKqHvutD9ETCPQb268/IfbCYPXAxLpUFf0zicBYeqt2YbQ738fc8yTjbVumNvERtp4WogEOdIQ7LgBAmegIGjAfY/xitOK097Zh6ZEj5/a8bazt0NW3du03WOTXKtJkDUHLFzYU3bxtzj0UlQhQ== vlada@batistuta"
+
+# install required packages for Keycloak
+package_update: true
+packages:
+  - openjdk-21-jdk

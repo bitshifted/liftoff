@@ -1,0 +1,14 @@
+#! /bin/bash
+
+# remove current certificates
+rm -vf {{ keycloak_cert_dir }}/* 
+
+# copy new certificates
+cp /etc/letsencrypt/live/{{ keycloak_hostname }}/fullchain.pem {{ keycloak_cert_dir }}
+cp /etc/letsencrypt/live/{{ keycloak_hostname }}/privkey.pem {{ keycloak_cert_dir }}
+# set correct ownership
+chown keycloak:keycloak {{ keycloak_cert_dir }}/fullchain.pem
+chown keycloak:keycloak {{ keycloak_cert_dir }}/privkey.pem
+
+# restart Keycloak service
+systemctl restart keycloak

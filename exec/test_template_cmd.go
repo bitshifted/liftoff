@@ -5,40 +5,31 @@ package exec
 
 import (
 	"errors"
-	"os"
 	"os/exec"
 	"path"
 
 	"github.com/bitshifted/liftoff/common"
-	"github.com/bitshifted/liftoff/gitops"
+	"github.com/bitshifted/liftoff/config"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/bitshifted/liftoff/template"
 )
 
 func (ec *ExecutionConfig) ExecuteTestTemplate() error {
-	repo := ec.Config.TemplateRepo
-	if repo == "" {
-		log.Logger.Info().Msg("Template repository not specified")
-	} else {
-		tmpDir, err := os.MkdirTemp("", "template_repo")
-		if err != nil {
-			log.Logger.Error().Err(err).Msg("Failed to create temprorary directory for clone")
-		}
-		handler := gitops.GitHandler{
-			URL:         repo,
-			Version:     ec.Config.TempateVersion,
-			Destination: tmpDir,
-		}
-		err = handler.Fetch()
-		if err != nil {
-			return err
-		}
+	tmplDir, err := ec.templateDirAbsPath()
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to get template directory path")
+		return err
 	}
-	tmplDir := ec.Config.TemplateDir
 	if tmplDir == "" {
 		return errors.New("either template repository or template directory must be specified")
 	}
 	log.Logger.Info().Msgf("Template directory: %s", tmplDir)
+	tmplConfig, err := config.LoadTemplateConfig(tmplDir)
+	if err != nil {
+		log.Logger.Error().Err(err).Msgf("Failed to load template configuration: %s", err.Error())
+		return err
+	}
+	ec.Config.TemplateConfig = tmplConfig
 	output, err := ec.calculateOutputDirectory()
 	if err != nil {
 		return err

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/bitshifted/liftoff/config"
+	"github.com/bitshifted/liftoff/gitops"
 	"github.com/bitshifted/liftoff/log"
 )
 
@@ -56,4 +57,33 @@ func (ec *ExecutionConfig) calculateOutputDirectory() (string, error) {
 		return "", err
 	}
 	return genDirPath, nil
+}
+
+func (ec *ExecutionConfig) templateDirAbsPath() (string, error) {
+	repo := ec.Config.TemplateRepo
+	tmplDirAbsPath := ""
+	if repo == "" {
+		log.Logger.Info().Msg("Template repository not specified")
+	} else {
+		tmpDir, err := os.MkdirTemp("", "template_repo")
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("Failed to create temprorary directory for clone")
+			return "", err
+		}
+		tmplDirAbsPath = tmpDir
+		log.Logger.Info().Msgf("Cloning template repository %s to %s", repo, tmplDirAbsPath)
+		handler := gitops.GitHandler{
+			URL:         repo,
+			Version:     ec.Config.TempateVersion,
+			Destination: tmpDir,
+		}
+		err = handler.Fetch()
+		if err != nil {
+			return "", err
+		}
+	}
+	if ec.Config.TemplateDir != "" {
+		tmplDirAbsPath = path.Join(tmplDirAbsPath, ec.Config.TemplateDir)
+	}
+	return tmplDirAbsPath, nil
 }

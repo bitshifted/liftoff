@@ -1,0 +1,3 @@
+---
+terraform-extra-dir: tf-extra-dir
+ansible-roles-dir: ../roles-dir
