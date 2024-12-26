@@ -4,6 +4,8 @@
 package config
 
 import (
+	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,4 +72,30 @@ func TestShouldErrorForInvalidBackendType(t *testing.T) {
 	_, err := LoadConfig("./test_files/invalid-backend-config.yaml")
 	assert.Error(t, err)
 	assert.Equal(t, "invalid backend type: foo", err.Error())
+}
+
+func TestShouldReturnNilWhenNoTemplateConfig(t *testing.T) {
+	config, err := LoadTemplateConfig("./test_files")
+	assert.NoError(t, err)
+	assert.Nil(t, config)
+}
+
+func TestShouldReturnAbsolutePathForTemplateRelativePaths(t *testing.T) {
+	absPath, err := filepath.Abs("./test_files/tmpl-test-dir")
+	assert.NoError(t, err)
+	config, err := LoadTemplateConfig(absPath)
+	assert.NoError(t, err)
+	assert.NotNil(t, config)
+	assert.Equal(t, path.Join(absPath, "tf-extra-dir"), config.TerraformExtraDir)
+	assert.Equal(t, path.Join(absPath, "../roles-dir"), config.AnsibleRolesDir)
+}
+
+func TestShouldReturnSameForAbsolutePath(t *testing.T) {
+	absPath, err := filepath.Abs("./test_files/abs-tmpl-dir")
+	assert.NoError(t, err)
+	config, err := LoadTemplateConfig(absPath)
+	assert.NoError(t, err)
+	assert.NotNil(t, config)
+	assert.Equal(t, "/tmp/terraform", config.TerraformExtraDir)
+	assert.Equal(t, path.Join(absPath, "../roles-dir"), config.AnsibleRolesDir)
 }

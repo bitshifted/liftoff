@@ -19,9 +19,11 @@ import (
 )
 
 const (
-	templateSuffix     = ".tmpl"
-	generatedFilesName = ".genfiles"
-	fileMode           = 0644
+	templateSuffix                  = ".tmpl"
+	generatedFilesName              = ".genfiles"
+	fileMode                        = 0644
+	terraformTemplate  templateType = iota
+	ansibleTemplate
 )
 
 type TemplateProcessor struct {
@@ -32,20 +34,36 @@ type TemplateProcessor struct {
 	generatedFiles []string
 }
 
+type templateType int
+
 func (tp *TemplateProcessor) ProcessTerraformTemplates(conf *config.Configuration) error {
 	if tp.TerraformDir == "" {
 		tp.TerraformDir = common.DefaultTerraformDir
 	}
 	tfTemplateDir := path.Join(tp.BaseDir, tp.TerraformDir)
 	log.Logger.Debug().Msgf("Terraform template directory: %s", tfTemplateDir)
-	outputDir := tp.calculateOutputDirectory(common.DefaultTerraformDir)
+	tfTemplateDirExt := ""
+	if conf.TemplateConfig != nil {
+		tfTemplateDirExt = conf.TemplateConfig.TerraformExtraDir
+		log.Logger.Debug().Msgf("Terraform extra template directory: %s", tfTemplateDirExt)
+	}
+	outputDir := tp.calculateOutputDirectory(terraformTemplate)
 	log.Logger.Info().Msgf("Terraform output directory: %s", outputDir)
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to create output directory")
 		return err
 	}
-	err = tp.fileWalker(tfTemplateDir, conf)
+	// process extra Terraform templates
+	if tfTemplateDirExt != "" {
+		err = tp.fileWalker(tfTemplateDirExt, conf, terraformTemplate)
+		if err != nil {
+			log.Logger.Error().Err(err).Msg("Failed to process Terraform extra templates")
+			return err
+		}
+	}
+	// process local Terraform templates
+	err = tp.fileWalker(tfTemplateDir, conf, terraformTemplate)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to process Terraform templates")
 		return err
@@ -63,7 +81,7 @@ func (tp *TemplateProcessor) ProcessAnsibleTemplates(conf *config.Configuration)
 	}
 	ansibleTemplateDir := path.Join(tp.BaseDir, tp.AnsibleDir)
 	log.Logger.Debug().Msgf("Ansible template directory: %s", ansibleTemplateDir)
-	outputDir := tp.calculateOutputDirectory(common.DefaultAnsibleDir)
+	outputDir := tp.calculateOutputDirectory(ansibleTemplate)
 	log.Logger.Info().Msgf("Ansible output directory: %s", outputDir)
 	err := os.MkdirAll(outputDir, os.ModePerm)
 	if err != nil {
@@ -76,7 +94,7 @@ func (tp *TemplateProcessor) ProcessAnsibleTemplates(conf *config.Configuration)
 		return nil
 	}
 	tp.generatedFiles = []string{}
-	err = tp.fileWalker(ansibleTemplateDir, conf)
+	err = tp.fileWalker(ansibleTemplateDir, conf, ansibleTemplate)
 	if err != nil {
 		return err
 	}
@@ -87,8 +105,8 @@ func (tp *TemplateProcessor) ProcessAnsibleTemplates(conf *config.Configuration)
 	return err
 }
 
-func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration) error {
-	log.Logger.Debug().Msgf("Processing template file %s", templatePath)
+func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration, tmplType templateType) error {
+	log.Logger.Debug().Msgf("Processing template file %s type %d", templatePath, tmplType)
 	tmpl, err := template.New(filepath.Base(templatePath)).Delims("[[", "]]").ParseFiles(templatePath)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to parse template")
@@ -96,11 +114,17 @@ func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.C
 	}
 	outName := extractFileNameFromPath(templatePath)
 	relPath, err := filepath.Rel(tp.BaseDir, outName)
+	if tmplType == terraformTemplate && conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" {
+		relPath, err = filepath.Rel(conf.TemplateConfig.TerraformExtraDir, outName)
+	}
 	if err != nil {
 		log.Logger.Error().Err(err).Msgf("Failed to find relative path for %s", outName)
 		return err
 	}
 	outFilePath := path.Join(tp.OutputDir, relPath)
+	if tmplType == terraformTemplate && conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" {
+		outFilePath = path.Join(path.Join(tp.OutputDir, tp.TerraformDir), relPath)
+	}
 	log.Logger.Debug().Msgf("Output file path: %s", outFilePath)
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
@@ -118,13 +142,20 @@ func extractFileNameFromPath(filePath string) string {
 	return filePath
 }
 
-func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configuration) error {
+func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configuration, tmplType templateType) error {
+	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+		log.Logger.Warn().Msgf("Template directory %s does not exist. Skipping", templateDir)
+		return nil
+	}
 	return filepath.Walk(templateDir, func(fpath string, info os.FileInfo, err error) error {
 		log.Logger.Debug().Msgf("Walk file %s", fpath)
 		if err != nil {
 			return err
 		}
 		relPath, err := filepath.Rel(tp.BaseDir, fpath)
+		if conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" {
+			relPath, err = filepath.Rel(conf.TemplateConfig.TerraformExtraDir, fpath)
+		}
 		if err != nil {
 			log.Logger.Error().Err(err).Msgf("Failed to find reataive path for %s", fpath)
 			return err
@@ -133,13 +164,20 @@ func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configu
 			log.Logger.Debug().Msgf("Creating output directory %s", relPath)
 			return os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
 		} else {
-			return tp.processTemplate(path.Join(tp.BaseDir, relPath), conf)
+			return tp.processTemplate(fpath, conf, tmplType)
 		}
 	})
 }
 
-func (tp *TemplateProcessor) calculateOutputDirectory(dirName string) string {
+func (tp *TemplateProcessor) calculateOutputDirectory(tmplType templateType) string {
 	var outputDir string
+	dirName := ""
+	switch tmplType {
+	case terraformTemplate:
+		dirName = tp.TerraformDir
+	case ansibleTemplate:
+		dirName = tp.AnsibleDir
+	}
 	if tp.OutputDir == "" {
 		tp.OutputDir = common.DefaultOutputDir
 		outputDir = path.Join(tp.BaseDir, tp.OutputDir, dirName)
