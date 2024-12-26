@@ -1,1 +1,0 @@
-ansible-playbook -i hetzner/keycloak-simple/ansible/inventory hetzner/keycloak-simple/ansible/keycloak-setup.yaml 

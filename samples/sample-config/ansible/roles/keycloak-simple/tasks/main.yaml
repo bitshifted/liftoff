@@ -1,8 +1,0 @@
----
-- name: Install and setup PostgreSQL
-  import_tasks: postgresql.yaml
-- name: Get Letsencrypt certificates
-  import_tasks: certbot.yaml
-- name: Install and configure Keycloak
-  import_tasks: keycloak.yaml
-

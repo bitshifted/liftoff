@@ -9,7 +9,7 @@ COMMIT_ID_FLAG := "github.com/bitshifted/liftoff/cli.commitID=$(GIT_COMMIT_ID)"
 LDFLAGS := -ldflags="-X '$(VERSION_FLAG)' -X '$(BUILDNUM_FLAG)' -X '$(COMMIT_ID_FLAG)'"
 
 init:
-	mkdir -p  ${TARGET_DIR}/{linux-amd64, linux-arm64,windows-amd64,windows-arm64,macos-amd64,macos-arm64}
+	mkdir -p  ${TARGET_DIR}/{linux-amd64,linux-arm64,windows-amd64,windows-arm64,macos-amd64,macos-arm64}
 
 clean:
 	rm -rvf ${TARGET_DIR}

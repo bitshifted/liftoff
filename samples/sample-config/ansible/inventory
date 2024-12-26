@@ -1,2 +1,0 @@
-[keycloak]
-128.140.61.161 ansible_ssh_private_key_file=~/.ssh/hcloud_playground ansible_user=ansible
