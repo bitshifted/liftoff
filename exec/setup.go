@@ -13,20 +13,27 @@ import (
 	"path"
 
 	"github.com/bitshifted/liftoff/common"
+	"github.com/bitshifted/liftoff/config"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/bitshifted/liftoff/template"
 )
 
 func (ec *ExecutionConfig) ExecuteSetup() error {
-	repo := ec.Config.TemplateRepo
-	if repo == "" {
-		log.Logger.Info().Msg("Template repository not specified")
+	tmplDir, err := ec.templateDirAbsPath()
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to get template directory path")
+		return err
 	}
-	tmplDir := ec.Config.TemplateDir
 	if tmplDir == "" {
 		return errors.New("either template repository or template directory must be specified")
 	}
 	log.Logger.Info().Msgf("Template directory: %s", tmplDir)
+	tmplConfig, err := config.LoadTemplateConfig(tmplDir)
+	if err != nil {
+		log.Logger.Error().Err(err).Msgf("Failed to load template configuration: %s", err.Error())
+		return err
+	}
+	ec.Config.TemplateConfig = tmplConfig
 	output, err := ec.calculateOutputDirectory()
 	if err != nil {
 		return err
@@ -154,13 +161,20 @@ func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
 		return nil
 	}
 	log.Logger.Debug().Msgf("Using ansible-playbook command: %s", ec.AnsiblePlaybookPath)
-	log.Logger.Info().Msg("Running ansible-playbook")
-	cmdApply := osExec.Command(ec.AnsiblePlaybookPath, "-i", ec.Config.Ansible.InventoryFile, ec.Config.Ansible.PlaybookFile) //nolint:gosec
-	cmdApply.Stdout = os.Stdout
-	cmdApply.Stderr = os.Stderr
-	cmdApply.Dir = ec.AnsibleWorkDir
-	cmdApply.Env = append(cmdApply.Env, os.Environ()...)
-	err := cmdApply.Run()
+	log.Logger.Info().Msgf("Running ansible-playbook %s", ec.Config.Ansible.PlaybookFile)
+	cmdPlaybook := osExec.Command(ec.AnsiblePlaybookPath, "-i", ec.Config.Ansible.InventoryFile, ec.Config.Ansible.PlaybookFile) //nolint:gosec
+	cmdPlaybook.Stdout = os.Stdout
+	cmdPlaybook.Stderr = os.Stderr
+	cmdPlaybook.Dir = ec.AnsibleWorkDir
+	cmdPlaybook.Env = append(cmdPlaybook.Env, os.Environ()...)
+	// append custom roles dir if needed
+	if ec.Config.TemplateConfig != nil && ec.Config.TemplateConfig.AnsibleRolesDir != "" {
+		log.Logger.Debug().Msgf("Ansible roles directory: %s", ec.Config.TemplateConfig.AnsibleRolesDir)
+		cmdPlaybook.Env = append(cmdPlaybook.Env, "ANSIBLE_ROLES_PATH="+ec.Config.TemplateConfig.AnsibleRolesDir)
+	} else {
+		log.Logger.Info().Msg("No custom Ansible roles directory specified")
+	}
+	err := cmdPlaybook.Run()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to run ansible-playbook")
 	}
