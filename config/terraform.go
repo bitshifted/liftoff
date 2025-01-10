@@ -21,9 +21,10 @@ const (
 	providerHcloud       = "hcloud"
 	providerHetznerdns   = "hetznerdns"
 	providerDigitalOcean = "digitalocean"
+	providerCloudflare   = "cloudflare"
 )
 
-var supportedProviders = []string{providerHcloud, providerHetznerdns, providerDigitalOcean}
+var supportedProviders = []string{providerHcloud, providerHetznerdns, providerDigitalOcean, providerCloudflare}
 
 type Terraform struct {
 	Backend   *TerraformBackend `yaml:"backend,omitempty"`
