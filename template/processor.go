@@ -56,14 +56,14 @@ func (tp *TemplateProcessor) ProcessTerraformTemplates(conf *config.Configuratio
 	}
 	// process extra Terraform templates
 	if tfTemplateDirExt != "" {
-		err = tp.fileWalker(tfTemplateDirExt, conf, terraformTemplate)
+		err = tp.fileWalker(tfTemplateDirExt, conf, terraformTemplate, true)
 		if err != nil {
 			log.Logger.Error().Err(err).Msg("Failed to process Terraform extra templates")
 			return err
 		}
 	}
 	// process local Terraform templates
-	err = tp.fileWalker(tfTemplateDir, conf, terraformTemplate)
+	err = tp.fileWalker(tfTemplateDir, conf, terraformTemplate, false)
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to process Terraform templates")
 		return err
@@ -94,7 +94,7 @@ func (tp *TemplateProcessor) ProcessAnsibleTemplates(conf *config.Configuration)
 		return nil
 	}
 	tp.generatedFiles = []string{}
-	err = tp.fileWalker(ansibleTemplateDir, conf, ansibleTemplate)
+	err = tp.fileWalker(ansibleTemplateDir, conf, ansibleTemplate, false)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (tp *TemplateProcessor) ProcessAnsibleTemplates(conf *config.Configuration)
 	return err
 }
 
-func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration, tmplType templateType) error {
+func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.Configuration, tmplType templateType, override bool) error {
 	log.Logger.Debug().Msgf("Processing template file %s type %d", templatePath, tmplType)
 	tmpl, err := template.New(filepath.Base(templatePath)).Delims("[[", "]]").ParseFiles(templatePath)
 	if err != nil {
@@ -114,7 +114,7 @@ func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.C
 	}
 	outName := extractFileNameFromPath(templatePath)
 	relPath, err := filepath.Rel(tp.BaseDir, outName)
-	if tmplType == terraformTemplate && conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" {
+	if tmplType == terraformTemplate && conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" && override {
 		relPath, err = filepath.Rel(conf.TemplateConfig.TerraformExtraDir, outName)
 	}
 	if err != nil {
@@ -122,7 +122,7 @@ func (tp *TemplateProcessor) processTemplate(templatePath string, conf *config.C
 		return err
 	}
 	outFilePath := path.Join(tp.OutputDir, relPath)
-	if tmplType == terraformTemplate && conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" {
+	if tmplType == terraformTemplate && conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" && override {
 		outFilePath = path.Join(path.Join(tp.OutputDir, tp.TerraformDir), relPath)
 	}
 	log.Logger.Debug().Msgf("Output file path: %s", outFilePath)
@@ -142,7 +142,7 @@ func extractFileNameFromPath(filePath string) string {
 	return filePath
 }
 
-func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configuration, tmplType templateType) error {
+func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configuration, tmplType templateType, override bool) error {
 	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
 		log.Logger.Warn().Msgf("Template directory %s does not exist. Skipping", templateDir)
 		return nil
@@ -153,7 +153,7 @@ func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configu
 			return err
 		}
 		relPath, err := filepath.Rel(tp.BaseDir, fpath)
-		if conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" {
+		if conf.TemplateConfig != nil && conf.TemplateConfig.TerraformExtraDir != "" && tmplType == terraformTemplate && override {
 			relPath, err = filepath.Rel(conf.TemplateConfig.TerraformExtraDir, fpath)
 		}
 		if err != nil {
@@ -164,7 +164,7 @@ func (tp *TemplateProcessor) fileWalker(templateDir string, conf *config.Configu
 			log.Logger.Debug().Msgf("Creating output directory %s", relPath)
 			return os.MkdirAll(path.Join(tp.OutputDir, relPath), os.ModePerm)
 		} else {
-			return tp.processTemplate(fpath, conf, tmplType)
+			return tp.processTemplate(fpath, conf, tmplType, override)
 		}
 	})
 }
