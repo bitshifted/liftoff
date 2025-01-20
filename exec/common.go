@@ -4,6 +4,9 @@
 package exec
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -18,6 +21,7 @@ import (
 const (
 	defaltTerraformCmd = "terraform"
 	defaultAnsibleCmd  = "ansible-playbook"
+	liftoffHomeDirName = ".liftoff"
 )
 
 type ExecutionConfig struct {
@@ -38,6 +42,10 @@ func (ec *ExecutionConfig) executeTerraformCommand(cmd ...string) error {
 	command.Dir = ec.TerraformWorkDir
 	log.Logger.Debug().Msgf("Terraform work directory: %s", command.Dir)
 	command.Env = append(command.Env, os.Environ()...)
+	tfDataDir := ec.calculateTerraformDataDir()
+	if tfDataDir != "" {
+		command.Env = append(command.Env, fmt.Sprintf("TF_DATA_DIR=%s", tfDataDir))
+	}
 	return command.Run()
 }
 
@@ -86,4 +94,21 @@ func (ec *ExecutionConfig) templateDirAbsPath() (string, error) {
 		tmplDirAbsPath = path.Join(tmplDirAbsPath, ec.Config.TemplateDir)
 	}
 	return tmplDirAbsPath, nil
+}
+
+func (ec *ExecutionConfig) calculateTerraformDataDir() string {
+	configFileName := filepath.Base(ec.ConfigFilePath)
+	configFileExt := filepath.Ext(ec.ConfigFilePath)
+	// strip extension
+	strippedFileName := strings.Replace(configFileName, configFileExt, "", 1)
+	hash := sha256.New().Sum([]byte(ec.ConfigFilePath))
+	resultFileName := fmt.Sprintf("%s-%s", strippedFileName, hex.EncodeToString(hash)[0:8])
+	homeDirPath, err := os.UserHomeDir()
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to get user home directory")
+		return ""
+	}
+	tfDataDirPath := path.Join(homeDirPath, liftoffHomeDirName, resultFileName)
+	log.Logger.Debug().Msgf("Terraform data directory: %s", tfDataDirPath)
+	return tfDataDirPath
 }
