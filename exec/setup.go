@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	osExec "os/exec"
@@ -114,6 +115,11 @@ func (ec *ExecutionConfig) getTerraformOutputs() (map[string]interface{}, error)
 	cmdOut := osExec.Command(ec.TerraformPath, "output", "-json") //nolint:gosec
 	cmdOut.Dir = ec.TerraformWorkDir
 	cmdOut.Stderr = os.Stderr
+	cmdOut.Env = append(cmdOut.Env, os.Environ()...)
+	tfDataDir := ec.calculateTerraformDataDir()
+	if tfDataDir != "" {
+		cmdOut.Env = append(cmdOut.Env, fmt.Sprintf("TF_DATA_DIR=%s", tfDataDir))
+	}
 	r, w, err := os.Pipe()
 	if err != nil {
 		log.Logger.Error().Err(err).Msg("Failed to create pipe")
