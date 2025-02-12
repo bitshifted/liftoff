@@ -1,4 +1,4 @@
-[[- with .ProcessingVars.bastion_address -]]
+[[- with .ProcessingVars.ansible_bastion_host -]]
 Host [[ . ]]
 User [[ or $.ProcessingVars.ansible_user "ansible" ]]
 IdentityFile [[ or $.ProcessingVars.ansible_ssh_private_key  "~/.ssh/id_rsa" ]]
@@ -7,10 +7,10 @@ StrictHostKeyChecking [[ or $.ProcessingVars.ansible_ssh_strict_host_key_checkin
 UserKnownHostsFile /dev/null
 [[- end ]]
 
-Host *[[ with .ProcessingVars.bastion_address -]] ![[ . ]] [[ end ]]
+Host *[[ with .ProcessingVars.ansible_bastion_host -]] ![[ . ]] [[ end ]]
 User [[ or $.ProcessingVars.ansible_user "ansible" ]]
 IdentityFile [[ or  $.ProcessingVars.ansible_ssh_private_key "~/.ssh/id_rsa" ]]
 ForwardAgent yes
 StrictHostKeyChecking [[ or $.ProcessingVars.ansible_ssh_strict_host_key_checking "no" ]]
 UserKnownHostsFile /dev/null
-[[ with .ProcessingVars.bastion_address -]]ProxyJump [[ . ]] [[ end ]]
+[[ with .ProcessingVars.ansible_bastion_host -]]ProxyJump [[ . ]] [[ end ]]

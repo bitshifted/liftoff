@@ -46,7 +46,7 @@ func (ts *ExecutionSetupTestSuite) TestSshConfigFile_WithBastion() {
 			ProcessingVars: map[string]interface{}{
 				"ansible_user":            "testuser",
 				"ansible_ssh_private_key": "/path/to/private/key",
-				"bastion_address":         "bastion.example.com",
+				"ansible_bastion_host":    "bastion.example.com",
 			},
 		},
 		ConfigFilePath: "/bastion/config.yaml",
