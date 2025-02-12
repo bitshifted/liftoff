@@ -5,6 +5,9 @@ package exec
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"embed"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,12 +15,16 @@ import (
 	"os"
 	osExec "os/exec"
 	"path"
+	gotmpl "text/template"
 
 	"github.com/bitshifted/liftoff/common"
 	"github.com/bitshifted/liftoff/config"
 	"github.com/bitshifted/liftoff/log"
 	"github.com/bitshifted/liftoff/template"
 )
+
+//go:embed resources/*
+var resources embed.FS
 
 func (ec *ExecutionConfig) ExecuteSetup() error {
 	tmplDir, err := ec.templateDirAbsPath()
@@ -185,4 +192,29 @@ func (ec *ExecutionConfig) executeAnsiblePlaybook() error {
 		log.Logger.Error().Err(err).Msg("Failed to run ansible-playbook")
 	}
 	return err
+}
+
+func (ec *ExecutionConfig) generateSSHConfig() error {
+	tmpl, err := gotmpl.New("ssh_config.tmpl").Delims("[[", "]]").ParseFS(resources, "resources/ssh_config.tmpl")
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to parse SSH config template")
+		return err
+	}
+	configHash := sha256.New().Sum([]byte(ec.ConfigFilePath))
+	sshConfigFileName := fmt.Sprintf("ssh_config_%s", hex.EncodeToString(configHash)[0:8])
+	tmpDir := os.TempDir()
+	outFilePath := path.Join(tmpDir, sshConfigFileName)
+	outFile, err := os.Create(outFilePath)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to create SSH config file")
+		return err
+	}
+	defer outFile.Close()
+	err = tmpl.Execute(outFile, ec.Config)
+	if err != nil {
+		log.Logger.Error().Err(err).Msg("Failed to execute SSH config template")
+		return err
+	}
+	ec.Config.ProcessingVars["ssh_config_file"] = outFilePath
+	return nil
 }

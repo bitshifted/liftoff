@@ -21,7 +21,7 @@ type ExecutionConfigTestSuite struct {
 func (ts *ExecutionConfigTestSuite) SetupSuite() {
 	// Initialize logger
 	log.Init(true)
-	log.Logger.Info().Msg("Running TerraformTestSuite")
+	log.Logger.Info().Msg("Running ExecutionConfigTestSuite")
 }
 
 func TestExecutionConfigTestSuite(t *testing.T) {
