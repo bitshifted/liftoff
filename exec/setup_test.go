@@ -37,7 +37,7 @@ func (ts *ExecutionSetupTestSuite) TestSshConfigFile_NoBastion() {
 	}
 	err := ec.generateSSHConfig()
 	ts.NoError(err)
-	ts.Equal("/tmp/ssh_config_2f706174", ec.Config.ProcessingVars["ssh_config_file"])
+	ts.Equal("/tmp/ssh_config_67fc95d4", ec.Config.ProcessingVars["ssh_config_file"])
 }
 
 func (ts *ExecutionSetupTestSuite) TestSshConfigFile_WithBastion() {
@@ -53,5 +53,5 @@ func (ts *ExecutionSetupTestSuite) TestSshConfigFile_WithBastion() {
 	}
 	err := ec.generateSSHConfig()
 	ts.NoError(err)
-	ts.Equal("/tmp/ssh_config_2f626173", ec.Config.ProcessingVars["ssh_config_file"])
+	ts.Equal("/tmp/ssh_config_361b7624", ec.Config.ProcessingVars["ssh_config_file"])
 }

@@ -7,7 +7,7 @@ StrictHostKeyChecking [[ or $.ProcessingVars.ansible_ssh_strict_host_key_checkin
 UserKnownHostsFile /dev/null
 [[- end ]]
 
-Host *[[ with .ProcessingVars.ansible_bastion_host -]] ![[ . ]] [[ end ]]
+Host * [[ with .ProcessingVars.ansible_bastion_host -]] ![[ . ]] [[ end ]]
 User [[ or $.ProcessingVars.ansible_user "ansible" ]]
 IdentityFile [[ or  $.ProcessingVars.ansible_ssh_private_key "~/.ssh/id_rsa" ]]
 ForwardAgent yes

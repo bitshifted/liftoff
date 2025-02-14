@@ -88,6 +88,10 @@ func (ec *ExecutionConfig) ExecuteSetup() error {
 	log.Logger.Debug().Msgf("Terraform output: %v", tfOutputs)
 
 	if !ec.SkipAnsible {
+		err = ec.generateSSHConfig()
+		if err != nil {
+			return err
+		}
 		log.Logger.Info().Msg("Processing Ansible configuration...")
 		err = processor.ProcessAnsibleTemplates(ec.Config)
 		if err != nil {
@@ -200,7 +204,9 @@ func (ec *ExecutionConfig) generateSSHConfig() error {
 		log.Logger.Error().Err(err).Msg("Failed to parse SSH config template")
 		return err
 	}
-	configHash := sha256.New().Sum([]byte(ec.ConfigFilePath))
+	sha := sha256.New()
+	sha.Write([]byte(ec.ConfigFilePath))
+	configHash := sha.Sum(nil)
 	sshConfigFileName := fmt.Sprintf("ssh_config_%s", hex.EncodeToString(configHash)[0:8])
 	tmpDir := os.TempDir()
 	outFilePath := path.Join(tmpDir, sshConfigFileName)
@@ -216,5 +222,6 @@ func (ec *ExecutionConfig) generateSSHConfig() error {
 		return err
 	}
 	ec.Config.ProcessingVars["ssh_config_file"] = outFilePath
+	log.Logger.Debug().Msgf("Generated SSH config file: %s", outFilePath)
 	return nil
 }
